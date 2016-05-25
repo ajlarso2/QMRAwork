@@ -55,7 +55,7 @@ gdrk <- klist[sample(nrow(klist), nsu, replace = TRUE), list(x)] #sampling rows 
 Sampling from the Giardia Crabtree custom distribution estimates:
 
 ```{r}
-cw.vlg <- fread("~/u_drive/envh543/cwvl_estimates/giardia_estwol.csv", sep = ',')
+cw.vlg <- fread("cwvl_estimates/giardia_estwol.csv", sep = ',')
 cw.vl.samp <- sample(cw.vlg[,c(V1)], nsu, replace = TRUE) 
 ```
 

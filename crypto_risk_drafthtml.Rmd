@@ -66,7 +66,7 @@ kval <- unlist(c(gdrkD,gdrkT,gdrkU))
 Sampling from the Cryptosporidium custom distribution estimates:
 
 ```{r}
-cw.vlg <- fread("~/u_drive/envh543/cwvl_estimates/crypto_est.csv", sep = ',')
+cw.vlg <- fread("cwvl_estimates/crypto_est.csv", sep = ',')
 cw.vl.samp <- sample(cw.vlg[,c(V1)], nsu, replace = TRUE) #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
 ```
 
