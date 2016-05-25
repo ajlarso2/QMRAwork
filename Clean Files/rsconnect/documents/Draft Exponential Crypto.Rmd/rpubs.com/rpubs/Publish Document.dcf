@@ -1,0 +1,7 @@
+name: Publish Document
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/182495/ba09d693808b46b9b5604fc7f41a6095
+bundleId: https://api.rpubs.com/api/v1/document/182495/ba09d693808b46b9b5604fc7f41a6095
+url: http://rpubs.com/ajlarso2/182495
+when: 1463765520.27454

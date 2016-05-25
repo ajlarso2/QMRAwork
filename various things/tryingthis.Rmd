@@ -1,0 +1,198 @@
+---
+title: "cryptosporidium_riskdraft"
+author: "Anika Larson"
+date: "5/10/2016"
+output: html_document
+---
+For this risk estimate, we will use 
+[mcmodel](http://www.inside-r.org/packages/cran/mc2d/docs/mcmodel) and 
+[evalmcmod](http://www.inside-r.org/packages/cran/mc2d/docs/evalmcmod) from 
+the [mc2d](https://cran.r-project.org/web/packages/mc2d/index.html) package. 
+
+
+```{r warning=FALSE}
+# Load packages.
+library(mc2d)
+library(data.table)
+```
+
+### Define variables
+
+Set the number of simulations for the variability and uncertainty dimensions. 
+
+```{r message=FALSE}
+nsv <- 401
+nsu <- 100
+ndvar(nsv)  # Variability
+ndunc(nsu)   # Uncertainty
+hm <- (nsu/4)
+```
+
+The _mc2d_ functions will set `nsv` to `ndvar()` and `nsu` to `ndunc()` by 
+default. Alternatively, we could supply these values to the _mc2d_ model
+functions when we call them.
+
+Define the variables we will use to set the `seed` for random sampling and the 
+number of `digits` for `print()` statements.
+
+```{r}
+seed <- 1
+digits <- 5
+```
+
+Introducing the bootstrapped dose-response data, fread command and sampling from Brian:
+
+```{r}
+alpha <- fread("~/u_drive/envh543/output/alphalist.csv", sep = ',')
+n50 <- fread("~/u_drive/envh543/output/N50list.csv", sep = ',')
+cdr <- merge(alpha,n50, by = "V1")
+scdr <- cdr[sample(nrow(cdr), nsu, replace = TRUE), list(alpha, N50)] #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
+```
+
+
+We will use this variable to explicitly set the seed with the various
+_mc2d_ functions. Another approach would be to only set it through the
+model evaluation functions, or not at all. Since we want to do our best
+to provide the most reproducible results, we set the seed explicitly.
+
+### Define exposure model
+
+Within the [mcmodel](http://www.inside-r.org/packages/cran/mc2d/docs/mcmodel)
+function, use [mcstoc](http://www.inside-r.org/packages/cran/mc2d/docs/mcstoc)
+to define "mc nodes" for each component of the model. 
+
+For each stochastic variable, use the `mcstoc()` function to create a 
+"mcnode", supply a probability function, the node type as "V" for variability 
+or "U" for uncertainty, and any additional parameters to be passed to the 
+probability function. 
+
+For deterministic variables, create nodes with the `mcdata()` function 
+using the "0" type.
+
+We will model the deterministic factors as uniform probablity distributions.
+
+The last statement makes an "mc" object using the 
+[mc](http://www.inside-r.org/packages/cran/mc2d/docs/mc) function.
+
+```{r}
+# Define an exposure model for evaluation by evalmcmod().
+expo.mod1 <- mcmodel({
+  # Values from Example 6.18 from Quantitative Microbial Risk Assessment, 
+  # 2nd Edition by Charles N. Haas, Joan B. Rose, and Charles P. Gerba. 
+  # (Wiley, 2014), pp. 215-216. Other fictitious values are noted below.
+  
+  # Cistern water viral loading (viruses/L):
+  cw.vl_jul92 <- dnorm(hm, mean = 0.75, sd = 1.57)
+  
+  cw.vl_jan93 <- dnorm(hm, mean = 11.61, sd = 25.94)
+  
+  cw.vl_apr93 <- dnorm(hm, mean = 1.25, sd = 2.59)
+  
+  cw.vl_jun93 <- dnorm(hm, mean = 3.52, sd = 4.97)
+  
+  huh <- c(cw.vl_jul92, cw.vl_jan93, cw.vl_apr93, cw.vl_jun93)
+  
+  cw.vl_seas <- mcstoc(rempiricalD, type = "VU", seed = seed, 
+                             values = c(0.75, 11.61, 1.25, 3.52), prob = c(0.25, 0.25, 0.25, 0.25))
+  
+  # Water consumption (L/day):
+  dw.ing <- mcdata(1.466, type = "0")
+
+  # Hosing per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
+  hose.perevent <- mcdata(.01, type = "0")
+
+  # Hosing frequency (hosing/day), fictitious discrete distribution (this basically says that there is a 10% chance someone never hoses, a 70% chance they use the hose every other day, and a 10% chance they use the hose every day) - will be IGNORED for the moment:
+  hosing.frequency <- mcstoc(rempiricalD, type = "V", seed = seed, 
+                             values = c(0, 0.5, 1), 
+                             prob = c(0.1, 0.7, 0.2))
+  
+   # Showering per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
+  shower.perevent <- mcdata(.01, type = "0")
+  
+  # Estimate the exposure based ONLY on drinking water ingestion using the 0, V and U nodes to create a VU node.
+  expo.mc1 <- (cw.vl_seas * (dw.ing + hose.perevent + shower.perevent)) 
+  
+  #Estimate the risk using a dose-response model pulling from a bootstrapped model of the dose-response
+  dose <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
+  
+  # Create mcnodes from previously sampled dose-response bootstrap estimates. - Brian
+  
+  a <- mcdata(scdr$alpha, type = "U")
+  n50 <- mcdata(scdr$N50, type = "U")
+  
+  risk <- 1 - (1 + dose*((2^(1/a)-1)/n50))^(-a) #this equation is my version of what came off QMRA Wiki <http://qmrawiki.canr.msu.edu/index.php?title=Dose_response_assessment> and someone should check it -A
+  
+  # Build a mc model from all of the mcnode objects.
+  mc(cw.vl_seas, dw.ing, hose.perevent, shower.perevent, a, n50, expo.mc1, risk) 
+})
+```
+
+### Evaluate the model
+
+Evaluate the model with 5000 iterations in the variability dimension and 250 
+iterations in the uncertainty dimension, as set previously.
+
+```{r}
+expo.ev1 <- evalmcmod(expo.mod1, seed = seed)
+print(expo.ev1, digits = digits)
+```
+
+### Summarize results
+
+Print a summary and a plot of the evaluation results (`expo.ev1`). 
+
+```{r results-ev1}
+# Summarize the results.
+summary(expo.ev1)
+
+# Plot the results.
+plot(expo.ev1)
+```
+
+Report the mean and median of the exposure means with a 95% confidence interval (CI95). 
+
+```{r}
+mean.expo <- sapply(1:ndunc(), function(j) mean(expo.ev1$expo.mc1[, j, ]))
+mean(mean.expo)
+quantile(mean.expo, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Report the mean and median of the risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean median-risk}
+mean.risk <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk[, j, ]))
+mean(mean.risk)
+quantile(mean.risk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+
+Plot the empirical cumulative distribution function (ecdf) of the exposure model 
+(`expo.mc1`) estimates.
+
+```{r plot-mc1}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$expo.mc1)
+```
+
+Plot the empirical cumulative distribution function (ecdf) of the risk model 
+(`risk`) estimates.
+
+```{r plot-risk}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk)
+```
+
+So if we did this right, could the plot above can be correctly labeled as follows?
+
+
+
+```{r plot-riskwlab}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
+title("Daily Infec. Risk with Cryptosporidium by RCRW
+in the USVI", cex.main = 1, font.main= 1, line = 7)
+```
+
+
+Questions:
+
