@@ -59,6 +59,15 @@ cw.vlg <- fread("cwvl_estimates/giardia_estwol.csv", sep = ',')
 cw.vl.samp <- sample(cw.vlg[,c(V1)], nsu, replace = TRUE) 
 ```
 
+```{r}
+  #pfc_reduc set using the distribution
+  gcfilt <- fread("cer_filts/CerFiltGiardia.csv", sep = ',')
+  colnames(gcfilt) <- c("trial","logr")
+  gcfilt$reduc <- (1 - (10^(-gcfilt$logr)))
+  pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
+```
+
+  
 We will use this variable to explicitly set the seed with the various
 _mc2d_ functions. Another approach would be to only set it through the
 model evaluation functions, or not at all. Since we want to do our best
@@ -118,7 +127,9 @@ expo.mod1 <- mcmodel({
   exporaw.uv <- (exporaw.mc1 * .0001)
   
     #Reduction by porous ceramic filtration - this is based on the "range" of values from 98.7% reduction to 99.8% reduction, but can be changed to just a single value:
-  pfc_reduc <- mcstoc(rempiricalD, type = "V", seed = seed, values = c(0.013, 0.009, 0.006, 0.002), prob = c(0.25, 0.25, 0.25, 0.25))
+  pfc_reduc1 <- mcstoc(rempiricalD, type = "V", seed = seed, values = c(0.013, 0.009, 0.006, 0.002), prob = c(0.25, 0.25, 0.25, 0.25))
+
+  pfc_reduc <- mcdata(pfc_reduc2$reduc, type = "U")
   exporaw.pfc_reduc <- (exporaw.mc1 * pfc_reduc)
   
   #Reduction by porous ceramic filtration AND free chlorine 5ppm:
@@ -180,7 +191,7 @@ Report the mean and median of the YEARLY risk probability means with a 95% confi
 ```{r mean risk}
 mean.yearrisk <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk[, j, ]))
 mean(mean.yearrisk)
-quantile(mean.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+quantile(mean.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "25%", "50%", "75%", "97.5%")]
 ```
 
 
