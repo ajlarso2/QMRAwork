@@ -70,6 +70,15 @@ cw.vlg <- fread("cwvl_estimates/crypto_est.csv", sep = ',')
 cw.vl.samp <- sample(cw.vlg[,c(V1)], nsu, replace = TRUE) #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
 ```
 
+
+```{r}
+  #pfc_reduc set using the distribution
+  gcfilt <- fread("cer_filts/CerFiltCrypto.csv", sep = ',')
+  colnames(gcfilt) <- c("trial","logr")
+  gcfilt$reduc <- (1 - (10^(-gcfilt$logr)))
+  pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
+```
+
 ### Define exposure model
 
 Within the [mcmodel](http://www.inside-r.org/packages/cran/mc2d/docs/mcmodel)
@@ -129,7 +138,9 @@ expo.mod1 <- mcmodel({
   exporaw.uv_and_2ppm_chl <- (exporaw.mc1 * .0001 * .4904)
   
   #Reduction by porous ceramic filtration - this is based on the "range" of values from 66.1% reduction to 99.6% reduction, but can be changed to just 99% reduction as well (that's the next version, see below):
-  pfc_reduc <- mcstoc(rempiricalD, type = "V", seed = seed, values = c(0.004, 0.135, 0.266, 0.39), prob = c(0.25, 0.25, 0.25, 0.25))
+  pfc_reduc1 <- mcstoc(rempiricalD, type = "V", seed = seed, values = c(0.004, 0.135, 0.266, 0.39), prob = c(0.25, 0.25, 0.25, 0.25))
+  
+  pfc_reduc <- mcdata(pfc_reduc2$reduc, type = "U")
   exporaw.porous_ceram <- (exporaw.mc1 * pfc_reduc)
   
   #Reduction by porous ceramic filtration, assuming 99% reduction:
