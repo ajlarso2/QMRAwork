@@ -103,8 +103,8 @@ function, use [mcstoc](http://www.inside-r.org/packages/cran/mc2d/docs/mcstoc)
 to define "mc nodes" for each component of the model. 
 
 For each stochastic variable, use the `mcstoc()` function to create a 
-"mcnode", supply a probability function, the node type as "V" for variability 
-or "U" for uncertainty, and any additional parameters to be passed to the 
+"mcnode", supply a probability function, the node type as "V" for variability, 
+"U" for uncertainty, or "VU" for both, and any additional parameters to be passed to the 
 probability function. 
 
 For deterministic variables, create nodes with the `mcdata()` function 
@@ -122,18 +122,19 @@ expo.mod1 <- mcmodel({
   # 2nd Edition by Charles N. Haas, Joan B. Rose, and Charles P. Gerba. 
   # (Wiley, 2014), pp. 215-216. Other fictitious values are noted below.
   
-   # Cistern water viral loading (viruses/L):
+  #Setting options for cistern water viral loading (viruses/L):
   cw.vl1 <- mcdata(cw.vl.samp, type = "U")
   cw.vl2 <- mcstoc(rempiricalD, type = "V", values = cw.vl.samp)
   cw.vl3 <- mcstoc(rempiricalD, type = "VU", values = cw.vl.samp)
+  #Defining cistern water viral loading:
   cw.vl <- cw.vl1
 
-  # Water consumption (L/day):
+  #Setting options for water consumption (L/day):
   dw.ing1 <- mcdata(1.466, type = "U")
   dw.ing2 <- mcstoc(rpois, type = "VU", lambda = 1.466)
   dw.ing <- dw.ing1
   
-  # Hosing per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
+  #Setting options for hosing per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
   hose.perevent <- mcdata(.01, type = "U")
   hose.perevent.dis <- mcdata(hose_exp$hose_exp1, type = "U")
   #Daily hosing exposure sampling from distribution
@@ -166,7 +167,7 @@ expo.mod1 <- mcmodel({
   #Reduction by porous ceramic filtration AND free chlorine 5ppm:
   exporaw.fcl_pfc <- (exporaw.mc1 * pfc_reduc * fc_reduc)
   
-    #Final exposure - make this whichever one you want to use at the moment:
+    #Defining the exposure to be used for the current trial, depending on the filtration / purification wanted:
   expo.mc1 <- exporaw.uv
   
   #Estimate the risk using a dose-response model pulling from a bootstrapped model of the dose-response
@@ -174,14 +175,14 @@ expo.mod1 <- mcmodel({
   dose2 <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
   dose <- dose1
   
-  #kvals:
+  #Drawing from the bootstrapped distribution of k-values made in Crystal Ball:
   k1 <- mcdata(gdrk$x, type = "U")
   k2 <- mcstoc(rempiricalD, type = "VU", values = pfc_reduc2$reduc)
   k <- k1
   
-  risk <- (1 - exp(-dose*k)) #this equation is my version an exponential DR equation from what came off QMRA Wiki <http://qmrawiki.canr.msu.edu/index.php?title=Dose_response_assessment> and someone should check it -A
+  risk <- (1 - exp(-dose*k)) #this equation is my version an exponential DR equation from what came off QMRA Wiki <http://qmrawiki.canr.msu.edu/index.php?title=Dose_response_assessment> and someone please check it -A
   
-  #yearlyrisk
+  #Setting the yearly risk:
   yearrisk <- 1 - ((1 - risk)^365)
 
   # Build a mc model from all of the mcnode objects.
@@ -191,7 +192,7 @@ expo.mod1 <- mcmodel({
 
 ### Evaluate the model
 
-Evaluate the model with 5000 iterations in the variability dimension and 250 
+Evaluate the model with 401 iterations in the variability dimension and 108 
 iterations in the uncertainty dimension, as set previously.
 
 ```{r}

@@ -21,12 +21,13 @@ library(data.table)
 Set the number of simulations for the variability and uncertainty dimensions. 
 
 ```{r message=FALSE}
-nsv <- 401
+nsv <- 402
 nsu <- 108
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
 rdv <- (nsu/3)
 cwv <- (nsu/4)
+div.nsv <- (nsv/3)
 ns <- nsu * nsv
 ```
 
@@ -55,11 +56,11 @@ Leaving that ^ for convenience, but since what we really want is a k-value list 
 
 ```{r}
 k_dup <- fread("output_dupont_crypto/klist_dupont.csv", sep = ',')
-gdrkD <- k_dup[sample(nrow(k_dup), rdv, replace = TRUE), list(k)] #sampling rows in the dose-response bootstrapped table equal to 1/3 the number of simulations in the uncertainty dimension, aka NSU
+gdrkD <- k_dup[sample(nrow(k_dup), div.nsv, replace = TRUE), list(k)] #sampling rows in the dose-response bootstrapped table equal to 1/3 the number of simulations in the uncertainty dimension, aka NSU
 k_tamu <- fread("output_tamu_crypto/klist_tamu.csv", sep = ',')
-gdrkT <- k_tamu[sample(nrow(k_tamu), rdv, replace = TRUE), list(k)]
+gdrkT <- k_tamu[sample(nrow(k_tamu), div.nsv, replace = TRUE), list(k)]
 k_ucp <- fread("output_UCP_crypto/klist_ucp.csv", sep = ',')
-gdrkU <- k_ucp[sample(nrow(k_ucp), rdv, replace = TRUE), list(k)]
+gdrkU <- k_ucp[sample(nrow(k_ucp), div.nsv, replace = TRUE), list(k)]
 kval <- unlist(c(gdrkD,gdrkT,gdrkU))
 ```
 
@@ -182,11 +183,11 @@ expo.mod1 <- mcmodel({
   #Reduction by UV filtration:
   exporaw.uv <- (exporaw.mc1 * .0001)
 
-  #Final exposure - just make this whichever one you want to use at the moment:
+  #Final exposure - can be assigned to whichever filtration system is in use:
   expo.mc1 <-  exporaw.por_ceram_singval
 
   
-  #Estimate the risk using a dose-response model pulling from a bootstrapped model of the dose-response
+  #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
   dose1 <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
   dose2 <- expo.mc1
   dose <- dose2
@@ -200,7 +201,7 @@ expo.mod1 <- mcmodel({
   riskbp <- 1 - (1 + dose*((2^(1/a)-1)/n50))^(-a) 
   
   #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
-  k1 <- mcdata(kval, type = "U")
+  k1 <- mcdata(kval, type = "V")
   k2 <- mcstoc(rempiricalD, type = "VU", values = kval)
   k <- k2
   
