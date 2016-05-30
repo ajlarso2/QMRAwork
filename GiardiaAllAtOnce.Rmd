@@ -1,0 +1,540 @@
+---
+title: "GiardiaAllAtOnce"
+author: "Anika Larson"
+date: "5/30/2016"
+output: html_document
+---
+
+For this risk estimate, we will use 
+[mcmodel](http://www.inside-r.org/packages/cran/mc2d/docs/mcmodel) and 
+[evalmcmod](http://www.inside-r.org/packages/cran/mc2d/docs/evalmcmod) from 
+the [mc2d](https://cran.r-project.org/web/packages/mc2d/index.html) package. 
+
+
+```{r warning=FALSE}
+# Load packages.
+library(mc2d)
+library(data.table)
+library(sfsmisc)
+library(graphics)
+```
+
+### Define variables
+
+Set the number of simulations for the variability and uncertainty dimensions. 
+
+```{r message=FALSE}
+nsv <- 401
+nsu <- 108
+ndvar(nsv)  # Variability
+ndunc(nsu)   # Uncertainty
+```
+
+The _mc2d_ functions will set `nsv` to `ndvar()` and `nsu` to `ndunc()` by 
+default. Alternatively, we could supply these values to the _mc2d_ model
+functions when we call them.
+
+Define the variables we will use to set the `seed` for random sampling and the 
+number of `digits` for `print()` statements.
+
+```{r}
+seed <- 1
+digits <- 5
+```
+
+Introducing the bootstrapped dose-response data, fread command and sampling from Brian:
+
+```{r}
+klist <- fread("output_rendtorff_giardia/klist.csv", sep = ',')
+gdrk <- klist[sample(nrow(klist), nsu, replace = TRUE), list(x)] #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
+```
+
+Sampling from the Giardia Crabtree custom distribution estimates:
+
+```{r}
+cw.vlg <- fread("conc_data_aggreg.csv", sep = ',')
+cw.vl.samp <- sample(cw.vlg[,c(cysts)], nsu, replace = TRUE) 
+```
+
+```{r}
+  #pfc_reduc set using the distribution
+  gcfilt <- fread("cer_filts/CerFiltGiardia.csv", sep = ',')
+  colnames(gcfilt) <- c("trial","logr")
+  gcfilt$reduc <- (1 - (10^(-gcfilt$logr)))
+  pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
+```
+
+Sampling from the distribution of the estimates of Crypto reduction by porous ceramic filtration:
+```{r}
+  #pfc_reduc set using the distribution
+  gcfilt <- fread("cer_filts/CerFiltCrypto.csv", sep = ',')
+  colnames(gcfilt) <- c("trial","logr")
+  gcfilt$reduc <- (1 - (10^(-gcfilt$logr)))
+  pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
+```
+
+Sampling from the daily hosing exposure estimates distribution:
+```{r}
+  #Creating a distribution for hosing
+  hose <- fread("exp_params/Hosing.csv", sep = ',')
+  colnames(hose) <- c("trial","num", "mL")
+  hose$hose_exp1 <- (hose$num * hose$mL)
+  hose_exp <- hose[sample(nrow(hose), nsu, replace = TRUE), list(hose_exp1)]
+```
+
+
+Sampling from the daily showering exposure estimates distribution:
+```{r}
+  #Creating a distribution for showering
+  shower <- fread("exp_params/Showers.csv", sep = ',')
+  colnames(shower) <- c("trial","num", "mL")
+  shower$shower_exp1 <- (shower$num * shower$mL)
+  shower_exp <- shower[sample(nrow(shower), nsu, replace = TRUE), list(shower_exp1)]
+```
+
+We will use this variable to explicitly set the seed with the various
+_mc2d_ functions. Another approach would be to only set it through the
+model evaluation functions, or not at all. Since we want to do our best
+to provide the most reproducible results, we set the seed explicitly.
+
+### Define exposure model
+
+Within the [mcmodel](http://www.inside-r.org/packages/cran/mc2d/docs/mcmodel)
+function, use [mcstoc](http://www.inside-r.org/packages/cran/mc2d/docs/mcstoc)
+to define "mc nodes" for each component of the model. 
+
+For each stochastic variable, use the `mcstoc()` function to create a 
+"mcnode", supply a probability function, the node type as "V" for variability, 
+"U" for uncertainty, or "VU" for both, and any additional parameters to be passed to the 
+probability function. 
+
+For deterministic variables, create nodes with the `mcdata()` function 
+using the "0" type.
+
+We will model the deterministic factors as uniform probablity distributions.
+
+The last statement makes an "mc" object using the 
+[mc](http://www.inside-r.org/packages/cran/mc2d/docs/mc) function.
+
+```{r}
+# Define an exposure model for evaluation by evalmcmod().
+expo.mod1 <- mcmodel({
+  # Values from Example 6.18 from Quantitative Microbial Risk Assessment, 
+  # 2nd Edition by Charles N. Haas, Joan B. Rose, and Charles P. Gerba. 
+  # (Wiley, 2014), pp. 215-216. Other fictitious values are noted below.
+  
+  #Setting options for cistern water viral loading (viruses/L):
+  cw.vl1 <- mcdata(cw.vl.samp, type = "U")
+  cw.vl2 <- mcstoc(rempiricalD, type = "V", values = cw.vl.samp)
+  cw.vl3 <- mcstoc(rempiricalD, type = "VU", values = cw.vl.samp)
+  #Defining cistern water viral loading:
+  cw.vl <- cw.vl3
+
+  #Setting options for water consumption (L/day):
+  dw.ing1 <- mcdata(1.466, type = "U")
+  dw.ing2 <- mcstoc(rpois, type = "VU", lambda = 1.466)
+  dw.ing <- dw.ing1
+  
+  #Setting options for hosing per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
+  hose.perevent <- mcdata(.01, type = "U")
+  hose.perevent.dis <- mcdata(hose_exp$hose_exp1, type = "U")
+  #Daily hosing exposure sampling from distribution
+  daily_hose_exp <- mcstoc(rempiricalD, type = "V", values = hose_exp$hose_exp1)
+  hosing <- hose.perevent
+  
+   # Showering per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
+  shower.perevent <- mcdata(.01, type = "U")
+  shower.perevent.dis <- mcdata(shower_exp$shower_exp1, type = "U")
+  #Daily showering sampling from distribution:
+  daily_shower_exp <- mcstoc(rempiricalD, type = "V", values = shower_exp$shower_exp1)
+  shower <- daily_shower_exp
+  
+  # Estimate the exposure based ONLY on drinking water ingestion using the 0, V and U nodes to create a VU node.
+  exporaw.mc1 <- (cw.vl * (dw.ing + hosing + shower)) 
+  
+  #Reduction by free chlorine at 5ppm - this is based on the "range" of values from 99% reduction to 99.8% reduction as continuous distribution:
+  fc_reduc <- mcstoc(rempiricalC, type = "V", n = 401, values = c(.002, .01), min = .002, max = .01) 
+  exporaw.5ppm_fcl <- (exporaw.mc1 * fc_reduc)
+  
+  #Reduction by UV, no variability or uncertainty: 
+  exporaw.uv <- (exporaw.mc1 * .0001)
+  
+    #Reduction by porous ceramic filtration:
+  pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
+  pfc_reduc4 <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
+  pfc_reduc <- pfc_reduc4
+  exporaw.pfc_reduc <- (exporaw.mc1 * pfc_reduc)
+  
+  #Reduction by porous ceramic filtration AND free chlorine 5ppm:
+  exporaw.fcl_pfc <- (exporaw.mc1 * pfc_reduc * fc_reduc)
+  
+  #Final exposure - can be assigned to whichever filtration system is in use:
+  expo.mc1 <-  exporaw.pfc_reduc
+  
+  dose1 <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
+  dose2 <- expo.mc1
+  dose <- dose2
+  
+  #Drawing from the bootstrapped distribution of k-values made in Crystal Ball:
+  k1 <- mcdata(gdrk$x, type = "U")
+  k2 <- mcstoc(rempiricalD, type = "VU", values = pfc_reduc2$reduc)
+  k <- k1
+  
+  #estimating risk with exponential equation:
+  risk1 <- (1 - exp(-dose*k))
+  risk2 <- mcstoc(rpois, type = "VU", lambda = risk1)
+  risk <- risk1
+
+  #yearlyrisk
+  yearrisk <- 1- ((1 - risk)^365)
+  
+    #RAW VERSION:
+  #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
+  dose1.raw <- mcstoc(rpois, type = "VU", lambda = exporaw.mc1)
+  dose2.raw <- exporaw.mc1
+  dose.raw <- dose2.raw
+  
+      #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
+  risk1.raw <- (1 - exp(-dose.raw*k))
+  risk2 <- mcstoc(rpois, type = "VU", lambda = risk1)
+  risk.raw <- risk1.raw
+  
+  #yearlyrisk
+  yearrisk.raw <- 1- ((1 - risk.raw)^365)
+  
+  #FREE CHLORINE VERSION:
+  #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
+  dose1 <- mcstoc(rpois, type = "VU", lambda = exporaw.5ppm_fcl)
+  dose2 <- exporaw.5ppm_fcl
+  dose.chl <- dose2
+  
+      #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
+  risk1.chl <- (1 - exp(-dose.chl*k))
+  risk2 <- mcstoc(rpois, type = "VU", lambda = risk1)
+  risk.chl <- risk1.chl
+  
+  
+  #yearlyrisk
+  yearrisk.chl <- 1- ((1 - risk.chl)^365)
+  
+    #UV VERSION:
+  #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
+  dose1.uv <- mcstoc(rpois, type = "VU", lambda = exporaw.uv)
+  dose2.uv <- exporaw.uv
+  dose.uv <- dose2.uv
+  
+      #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
+  risk1.uv <- (1 - exp(-dose.uv*k))
+  risk2.uv <- mcstoc(rpois, type = "VU", lambda = risk1)
+  risk.uv <- risk1.uv
+  
+  #yearlyrisk
+  yearrisk.uv <- 1- ((1 - risk.uv)^365)
+  
+      #POROUS CERAMIC FILTRATION VERSION:
+  #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
+  dose1.pcf <- mcstoc(rpois, type = "VU", lambda = exporaw.pfc_reduc)
+  dose2.pcf <- exporaw.pfc_reduc
+  dose.pcf <- dose2.pcf
+  
+      #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
+  risk1.pcf <- (1 - exp(-dose.pcf*k))
+  risk2.pcf <- mcstoc(rpois, type = "VU", lambda = risk1.pcf)
+  risk.pcf <- risk1.pcf
+  
+  #yearlyrisk
+  yearrisk.pcf <- 1- ((1 - risk.pcf)^365)
+  
+  # Build a mc model from all of the mcnode objects.
+  mc(cw.vl1, cw.vl2, cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw.5ppm_fcl, exporaw.uv,  pfc_reduc, exporaw.pfc_reduc, k1, k2, k, expo.mc1, dose, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
+})
+```
+
+### Evaluate the model
+
+Evaluate the model with 401 iterations in the variability dimension and 59 
+iterations in the uncertainty dimension, as set previously.
+
+```{r}
+expo.ev1 <- evalmcmod(expo.mod1, seed = seed)
+print(expo.ev1, digits = digits)
+```
+
+### Summarize results
+
+Print a summary and a plot of the evaluation results (`expo.ev1`). 
+
+```{r results-ev1}
+# Summarize the results.
+summary(expo.ev1)
+
+# Plot the results.
+plot(expo.ev1)
+```
+
+Report the mean and median of the exposure means with a 95% confidence interval (CI95). 
+
+```{r}
+mean.expo <- sapply(1:ndunc(), function(j) mean(expo.ev1$expo.mc1[, j, ]))
+mean(mean.expo)
+quantile(mean.expo, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean median-risk}
+mean.risk <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk[, j, ]))
+mean(mean.risk)
+quantile(mean.risk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean risk}
+mean.yearrisk <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk[, j, ]))
+mean(mean.yearrisk)
+quantile(mean.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Plot the empirical cumulative distribution function (ecdf) of the exposure model 
+(`expo.mc1`) estimates.
+
+```{r plot-mc1}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$expo.mc1)
+```
+
+Plot the empirical cumulative distribution function (ecdf) of the risk model 
+(`risk`) estimates.
+
+```{r plot-risk}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk)
+```
+
+Label the plot:
+
+```{r plot-riskwlab}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
+title("Daily Infec. Risk with Cryptosporidium by RCRW
+in the USVI", cex.main = 1, font.main= 1, line = 7)
+```
+
+
+```{r plot-yearriskwlab}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$yearrisk, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
+title("Yearly Infec. Risk with Cryptosporidium by RCRW
+in the USVI", cex.main = 1, font.main= 1, line = 7)
+```
+
+
+RAW:
+
+Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean median-risk.raw}
+mean.risk.raw <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk.raw[, j, ]))
+mean(mean.risk.raw)
+quantile(mean.risk.raw, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean risk.raw}
+mean.yearrisk.raw <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk.raw[, j, ]))
+mean(mean.yearrisk.raw)
+quantile(mean.yearrisk.raw, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Plot the empirical cumulative distribution function (ecdf) of the risk model 
+(`risk`) estimates.
+
+```{r plot-risk.raw}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk.raw)
+```
+
+Label the plot:
+
+```{r plot-riskwlab.raw}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk.raw, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
+title("Daily Infec. Risk with Cryptosporidium by RCRW
+from Raw Water", cex.main = 1, font.main= 1, line = 7)
+```
+
+
+```{r plot-yearriskwlab.raw}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$yearrisk.raw, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
+title("Yearly Infec. Risk with Cryptosporidium by RCRW
+from Raw Water", cex.main = 1, font.main= 1, line = 7)
+```
+
+CHLORINATED:
+
+Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean median-risk.chl}
+mean.risk.chl <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk.chl[, j, ]))
+mean(mean.risk.chl)
+quantile(mean.risk.chl, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean risk.chl}
+mean.yearrisk.chl <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk.chl[, j, ]))
+mean(mean.yearrisk.chl)
+quantile(mean.yearrisk.chl, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Plot the empirical cumulative distribution function (ecdf) of the risk model 
+(`risk`) estimates.
+
+```{r plot-risk.chl}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk.chl)
+```
+
+Label the plot:
+
+```{r plot-riskwlab.chl}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk.chl, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
+title("Daily Infec. Risk with Cryptosporidium by RCRW
+from Chlorinated Water", cex.main = 1, font.main= 1, line = 7)
+```
+
+
+```{r plot-yearriskwlab.chl}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$yearrisk.chl, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
+title("Yearly Infec. Risk with Cryptosporidium by RCRW
+from Chlorinated Water", cex.main = 1, font.main= 1, line = 7)
+```
+
+UV TREATED:
+
+Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean median-risk.uv}
+mean.risk.uv <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk.uv[, j, ]))
+mean(mean.risk.uv)
+quantile(mean.risk.uv, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean risk.uv}
+mean.yearrisk.uv <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk.uv[, j, ]))
+mean(mean.yearrisk.uv)
+quantile(mean.yearrisk.uv, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Plot the empirical cumulative distribution function (ecdf) of the risk model 
+(`risk`) estimates.
+
+```{r plot-risk.uv}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk.uv)
+```
+
+Label the plot:
+
+```{r plot-riskwlab.uv}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk.uv, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
+title("Daily Infec. Risk with Cryptosporidium by RCRW
+from UV Treated Water", cex.main = 1, font.main= 1, line = 7)
+```
+
+
+```{r plot-yearriskwlab.uv}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$yearrisk.uv, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
+title("Yearly Infec. Risk with Cryptosporidium by RCRW
+from UV Treated Water", cex.main = 1, font.main= 1, line = 7)
+```
+
+POROUS CERAMIC FILTRATION:
+
+Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean median-risk.pcf}
+mean.risk.pcf <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk.pcf[, j, ]))
+mean(mean.risk.pcf)
+quantile(mean.risk.pcf, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+
+```{r mean risk.pcf}
+mean.yearrisk.pcf <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk.pcf[, j, ]))
+mean(mean.yearrisk.pcf)
+quantile(mean.yearrisk.pcf, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```
+
+Plot the empirical cumulative distribution function (ecdf) of the risk model 
+(`risk`) estimates.
+
+```{r plot-risk.pcf}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk.pcf)
+```
+
+Label the plot:
+
+```{r plot-riskwlab.pcf}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$risk.pcf, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
+title("Daily Infec. Risk with Giardia by RCRW
+from Water Treated with PCF", cex.main = 1, font.main= 1, line = 7)
+```
+
+
+```{r plot-yearriskwlab.pcf}
+# Generate an "ecdf" plot. This actually calls plot.mcnode().
+plot(expo.ev1$yearrisk.pcf, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
+title("Yearly Infec. Risk with Giardia by RCRW
+from Water Treated with PCF", cex.main = 1, font.main= 1, line = 7)
+```
+
+
+
+Manually remake the graph, this time using yearrisk, which should just be another mcnode object with all values between 0 and 1:
+
+The first one plots yearrisk without a log x scale:
+```{r plot-withyearrisk}
+library(reshape)
+library(ggplot2)
+Risk.mat.1 <- expo.ev1$yearrisk[,,]
+probs1 <- c(0.025, 0.25, 0.50, 0.75, 0.975)
+quant1 <- as.data.frame(t(apply(Risk.mat.1, 1, quantile, probs = probs1)))
+ecdfs1 <- sapply(names(quant1), function(q) ecdf(quant1[[q]]))
+plot(ecdfs1[['50%']], main = '')
+grays <- c('gray75', 'gray35', 'black', 'gray35', 'gray75')
+lines <- mapply(function(e, g) lines(e, col = g), ecdfs1, grays)
+```
+
+
+Plotting yearrisk ECDF plot with ggplot2:
+
+```{r plot-withyearriskgpplot}
+quant.melt1 <- suppressMessages(melt(quant1))
+names(quant.melt1) <- c('q', 'x')
+grays <- c('gray75', 'gray35', 'black', 'gray35', 'gray75')
+ggplot(quant.melt1, aes(x = x)) + theme_bw() + theme(legend.position = 'none') + geom_hline(yintercept = c(0, 1), linetype = "dashed", color = 'gray') + stat_ecdf(aes(group = q, color = q)) + xlab('x') + ylab('Fn(x)') + scale_colour_manual(values = grays)
+```
+
+Plot Version 2 with ggplot2, and a log-scale x axis:
+
+```{r plot-withyearrisklogscale}
+quant.melt1 <- suppressMessages(melt(quant1))
+names(quant.melt1) <- c('q', 'x')
+grays <- c('gray75', 'gray35', 'black', 'gray35', 'gray75')
+ggplot(quant.melt1, aes(x = x)) + theme_bw() + theme(legend.position = 'none') + geom_hline(yintercept = c(0, 1), linetype = "dashed", color = 'gray') + stat_ecdf(aes(group = q, color = q)) + xlab('x') + ylab('Fn(x)') + scale_colour_manual(values = grays) + scale_x_log10()
+```
+
