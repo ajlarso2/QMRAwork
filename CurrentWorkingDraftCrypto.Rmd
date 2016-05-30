@@ -21,7 +21,7 @@ library(data.table)
 Set the number of simulations for the variability and uncertainty dimensions. 
 
 ```{r message=FALSE}
-nsv <- 420
+nsv <- 360
 nsu <- 120
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
@@ -67,12 +67,13 @@ kval <- unlist(c(gdrkD,gdrkT,gdrkU))
 ```
 
 
-Sampling from the Cryptosporidium custom distribution estimates:
+Sampling from the Cryptosporidium distribution estimates:
 
 ```{r}
-#Using the original aggregated estimates:
+#Using the original custom distribution of estimates from aggregated cistern estimates:
 cw.vlg1 <- fread("conc_data_aggreg.csv", sep = ',')
 cw.vl.samp1 <- sample(cw.vlg1[,c(oocysts)], nsu, replace = TRUE) 
+
 #Using a combination of log-normal distributions from each of the the 5 different cisterns:
 cw.vl.ln <- fread("concdata_percis.csv", sep = ',')
 v1 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v1_ln)]
@@ -87,7 +88,9 @@ v8 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v8_ln)]
 colnames(v8) <- c("cw.vals")
 cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v8$cw.vals))
 cw.vl.samp2 <- sample(cw.vlg2, nsu, replace = TRUE) 
-cw.vl.samp <- cw.vl.samp1
+
+#Determine which estimate to use: the original custom distribution (cw.vl.samp1) or the combined lognormal ditributions for each cistern (cw.vl.samp2).
+cw.vl.samp <- cw.vl.samp2
 
 ```
 

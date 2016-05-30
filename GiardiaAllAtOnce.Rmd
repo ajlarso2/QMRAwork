@@ -107,7 +107,6 @@ Sampling from the daily hosing exposure estimates distribution:
   hose_exp <- hose[sample(nrow(hose), nsu, replace = TRUE), list(hose_exp1)]
 ```
 
-
 Sampling from the daily showering exposure estimates distribution:
 ```{r}
   #Creating a distribution for showering
@@ -342,7 +341,7 @@ Label the plot:
 ```{r plot-riskwlab}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$risk, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
-title("Daily Infec. Risk with Cryptosporidium by RCRW
+title("Daily Infec. Risk with Giardia by RCRW
 in the USVI", cex.main = 1, font.main= 1, line = 7)
 ```
 
@@ -350,7 +349,7 @@ in the USVI", cex.main = 1, font.main= 1, line = 7)
 ```{r plot-yearriskwlab}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$yearrisk, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
-title("Yearly Infec. Risk with Cryptosporidium by RCRW
+title("Yearly Infec. Risk with Giardia by RCRW
 in the USVI", cex.main = 1, font.main= 1, line = 7)
 ```
 
@@ -386,7 +385,7 @@ Label the plot:
 ```{r plot-riskwlab.raw}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$risk.raw, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
-title("Daily Infec. Risk with Cryptosporidium by RCRW
+title("Daily Infec. Risk with Giardia by RCRW
 from Raw Water", cex.main = 1, font.main= 1, line = 7)
 ```
 
@@ -394,7 +393,7 @@ from Raw Water", cex.main = 1, font.main= 1, line = 7)
 ```{r plot-yearriskwlab.raw}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$yearrisk.raw, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
-title("Yearly Infec. Risk with Cryptosporidium by RCRW
+title("Yearly Infec. Risk with Giardia by RCRW
 from Raw Water", cex.main = 1, font.main= 1, line = 7)
 ```
 
@@ -429,7 +428,7 @@ Label the plot:
 ```{r plot-riskwlab.chl}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$risk.chl, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
-title("Daily Infec. Risk with Cryptosporidium by RCRW
+title("Daily Infec. Risk with Giardia by RCRW
 from Chlorinated Water", cex.main = 1, font.main= 1, line = 7)
 ```
 
@@ -437,7 +436,7 @@ from Chlorinated Water", cex.main = 1, font.main= 1, line = 7)
 ```{r plot-yearriskwlab.chl}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$yearrisk.chl, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
-title("Yearly Infec. Risk with Cryptosporidium by RCRW
+title("Yearly Infec. Risk with Giardia by RCRW
 from Chlorinated Water", cex.main = 1, font.main= 1, line = 7)
 ```
 
@@ -472,7 +471,7 @@ Label the plot:
 ```{r plot-riskwlab.uv}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$risk.uv, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
-title("Daily Infec. Risk with Cryptosporidium by RCRW
+title("Daily Infec. Risk with Giardia by RCRW
 from UV Treated Water", cex.main = 1, font.main= 1, line = 7)
 ```
 
@@ -480,7 +479,7 @@ from UV Treated Water", cex.main = 1, font.main= 1, line = 7)
 ```{r plot-yearriskwlab.uv}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$yearrisk.uv, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
-title("Yearly Infec. Risk with Cryptosporidium by RCRW
+title("Yearly Infec. Risk with Giardia by RCRW
 from UV Treated Water", cex.main = 1, font.main= 1, line = 7)
 ```
 
