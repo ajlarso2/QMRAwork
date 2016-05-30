@@ -127,7 +127,7 @@ expo.mod1 <- mcmodel({
   cw.vl2 <- mcstoc(rempiricalD, type = "V", values = cw.vl.samp)
   cw.vl3 <- mcstoc(rempiricalD, type = "VU", values = cw.vl.samp)
   #Defining cistern water viral loading:
-  cw.vl <- cw.vl1
+  cw.vl <- cw.vl3
 
   #Setting options for water consumption (L/day):
   dw.ing1 <- mcdata(1.466, type = "U")
@@ -168,7 +168,7 @@ expo.mod1 <- mcmodel({
   exporaw.fcl_pfc <- (exporaw.mc1 * pfc_reduc * fc_reduc)
   
     #Defining the exposure to be used for the current trial, depending on the filtration / purification wanted:
-  expo.mc1 <- exporaw.uv
+  expo.mc1 <- exporaw.5ppm_fcl
   
   #Estimate the risk using a dose-response model pulling from a bootstrapped model of the dose-response
   dose1 <- expo.mc1

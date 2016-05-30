@@ -184,7 +184,7 @@ expo.mod1 <- mcmodel({
   exporaw.uv <- (exporaw.mc1 * .0001)
 
   #Final exposure - can be assigned to whichever filtration system is in use:
-  expo.mc1 <-  exporaw.por_ceram_singval
+  expo.mc1 <-  exporaw.porous_ceram
   
   #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
   dose1 <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
