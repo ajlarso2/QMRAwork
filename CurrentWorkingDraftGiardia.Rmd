@@ -88,7 +88,7 @@ cw.vl.samp <- cw.vl.samp2
   pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
 ```
 
-Sampling from the distribution of the estimates of Crypto reduction by porous ceramic filtration:
+Sampling from the distribution of the estimates of Crypto reduction by porous ceramic filtration, and converting them from log reduction to percent reduction:
 ```{r}
   #pfc_reduc set using the distribution
   gcfilt <- fread("cer_filts/CerFiltCrypto.csv", sep = ',')
