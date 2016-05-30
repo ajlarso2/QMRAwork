@@ -177,7 +177,7 @@ expo.mod1 <- mcmodel({
   exporaw.mc1 <- (cw.vl * (dw.ing + hosing + shower)) 
   
   #Reduction by free chlorine at 5ppm - this is based on the "range" of values from 99% reduction to 99.8% reduction as continuous distribution:
-  fc_reduc <- mcstoc(rempiricalC, type = "V", n = 401, values = c(.002, .01), min = .002, max = .01) 
+  fc_reduc <- mcstoc(rempiricalC, type = "V", n = 440, values = c(.001, .01), min = .001, max = .01) 
   exporaw.5ppm_fcl <- (exporaw.mc1 * fc_reduc)
   
   #Reduction by UV, no variability or uncertainty: 
@@ -186,9 +186,6 @@ expo.mod1 <- mcmodel({
     #Reduction by porous ceramic filtration based on the distribution entered earlier:
   pfc_reduc <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
   exporaw.pfc_reduc <- (exporaw.mc1 * pfc_reduc)
-  
-  #Reduction by porous ceramic filtration AND free chlorine 5ppm:
-  exporaw.fcl_pfc <- (exporaw.mc1 * pfc_reduc * fc_reduc)
   
   #Final exposure - can be assigned to whichever filtration system is in use:
   expo.mc1 <-  exporaw.pfc_reduc
@@ -234,7 +231,6 @@ expo.mod1 <- mcmodel({
   risk1.chl <- (1 - exp(-dose.chl*k))
   risk2 <- mcstoc(rpois, type = "VU", lambda = risk1)
   risk.chl <- risk1.chl
-  
   
   #yearlyrisk
   yearrisk.chl <- 1- ((1 - risk.chl)^365)
