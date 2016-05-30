@@ -196,10 +196,8 @@ expo.mod1 <- mcmodel({
     exporaw.freechl.tog <- mcstoc(rempiricalD, values = c(.47,.4904), prob = c(.5,.5), type = "V")
     exporaw_free_chl <- (exporaw.mc1 * exporaw.freechl.tog)
   
-  #Reduction by porous ceramic filtration - this is based on the "range" of values from 66.1% reduction to 99.6% reduction:
-  pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
-  pfc_reduc4 <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
-  pfc_reduc <- pfc_reduc4
+  #Reduction by porous ceramic filtration based on the distribution entered earlier:
+  pfc_reduc <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
   exporaw.porous_ceram <- (exporaw.mc1 * pfc_reduc)
   
   #Reduction by porous ceramic filtration, assuming 99% reduction:

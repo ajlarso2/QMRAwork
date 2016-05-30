@@ -183,10 +183,8 @@ expo.mod1 <- mcmodel({
   #Reduction by UV, no variability or uncertainty: 
   exporaw.uv <- (exporaw.mc1 * .0001)
   
-    #Reduction by porous ceramic filtration:
-  pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
-  pfc_reduc4 <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
-  pfc_reduc <- pfc_reduc4
+    #Reduction by porous ceramic filtration based on the distribution entered lines 93-99:
+  pfc_reduc <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
   exporaw.pfc_reduc <- (exporaw.mc1 * pfc_reduc)
   
   #Reduction by porous ceramic filtration AND free chlorine 5ppm:
