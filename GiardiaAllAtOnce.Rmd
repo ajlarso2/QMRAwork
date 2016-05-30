@@ -24,10 +24,16 @@ library(graphics)
 Set the number of simulations for the variability and uncertainty dimensions. 
 
 ```{r message=FALSE}
-nsv <- 401
-nsu <- 108
+nsv <- 360
+nsu <- 120
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
+rdv <- (nsu/3)
+cwv <- (nsu/4)
+div.nsv <- (nsv/3)
+div5.nsv <- (nsv/5)
+div5.nsu <- (nsu/5)
+ns <- nsu * nsv
 ```
 
 The _mc2d_ functions will set `nsv` to `ndvar()` and `nsu` to `ndunc()` by 
@@ -52,8 +58,27 @@ gdrk <- klist[sample(nrow(klist), nsu, replace = TRUE), list(x)] #sampling rows 
 Sampling from the Giardia Crabtree custom distribution estimates:
 
 ```{r}
-cw.vlg <- fread("conc_data_aggreg.csv", sep = ',')
-cw.vl.samp <- sample(cw.vlg[,c(cysts)], nsu, replace = TRUE) 
+#Using the original custom distribution of estimates from aggregated cistern estimates:
+cw.vlg1 <- fread("conc_data_aggreg.csv", sep = ',')
+cw.vl.samp1 <- sample(cw.vlg1[,c(cysts)], nsu, replace = TRUE) 
+
+#Using a combination of log-normal distributions from each of the the 5 different cisterns:
+cw.vl.ln <- fread("concdata_percis.csv", sep = ',')
+v1 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v1_ln)]
+colnames(v1) <- c("cw.vals")
+v11 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v11_ln)]
+colnames(v11) <- c("cw.vals")
+v2 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v2_ln)]
+colnames(v2) <- c("cw.vals")
+v5 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v5_ln)]
+colnames(v5) <- c("cw.vals")
+v9 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v9_ln)]
+colnames(v9) <- c("cw.vals")
+cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v9$cw.vals))
+cw.vl.samp2 <- sample(cw.vlg2, nsu, replace = TRUE) 
+
+#Determine which estimate to use: the original custom distribution (cw.vl.samp1) or the combined lognormal ditributions for each cistern (cw.vl.samp2).
+cw.vl.samp <- cw.vl.samp2
 ```
 
 ```{r}
@@ -64,10 +89,10 @@ cw.vl.samp <- sample(cw.vlg[,c(cysts)], nsu, replace = TRUE)
   pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
 ```
 
-Sampling from the distribution of the estimates of Crypto reduction by porous ceramic filtration:
+Sampling from the distribution of the estimates of protozoa reduction by porous ceramic filtration:
 ```{r}
   #pfc_reduc set using the distribution
-  gcfilt <- fread("cer_filts/CerFiltCrypto.csv", sep = ',')
+  gcfilt <- fread("cer_filts/CerFiltGiardia.csv", sep = ',')
   colnames(gcfilt) <- c("trial","logr")
   gcfilt$reduc <- (1 - (10^(-gcfilt$logr)))
   pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]

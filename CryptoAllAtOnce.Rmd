@@ -22,13 +22,15 @@ library(data.table)
 Set the number of simulations for the variability and uncertainty dimensions. 
 
 ```{r message=FALSE}
-nsv <- 402
-nsu <- 108
+nsv <- 360
+nsu <- 120
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
 rdv <- (nsu/3)
 cwv <- (nsu/4)
 div.nsv <- (nsv/3)
+div5.nsv <- (nsv/5)
+div5.nsu <- (nsu/5)
 ns <- nsu * nsv
 ```
 
@@ -69,8 +71,30 @@ kval <- unlist(c(gdrkD,gdrkT,gdrkU))
 Sampling from the Cryptosporidium custom distribution estimates:
 
 ```{r}
-cw.vlg <- fread("conc_data_aggreg.csv", sep = ',')
-cw.vl.samp <- sample(cw.vlg[,c(oocysts)], nsu, replace = TRUE) 
+```{r}
+#Using the original custom distribution of estimates from aggregated cistern estimates:
+cw.vlg1 <- fread("conc_data_aggreg.csv", sep = ',')
+cw.vl.samp1 <- sample(cw.vlg1[,c(oocysts)], nsu, replace = TRUE) 
+
+#Using a combination of log-normal distributions from each of the the 5 different cisterns:
+cw.vl.ln <- fread("concdata_percis.csv", sep = ',')
+v1 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v1_ln)]
+colnames(v1) <- c("cw.vals")
+v11 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v11_ln)]
+colnames(v11) <- c("cw.vals")
+v2 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v2_ln)]
+colnames(v2) <- c("cw.vals")
+v5 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v5_ln)]
+colnames(v5) <- c("cw.vals")
+v8 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v8_ln)]
+colnames(v8) <- c("cw.vals")
+cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v8$cw.vals))
+cw.vl.samp2 <- sample(cw.vlg2, nsu, replace = TRUE) 
+
+#Determine which estimate to use: the original custom distribution (cw.vl.samp1) or the combined lognormal ditributions for each cistern (cw.vl.samp2).
+cw.vl.samp <- cw.vl.samp2
+
+```
 ```
 
 Sampling from the distribution of the estimates of Crypto reduction by porous ceramic filtration:
@@ -229,7 +253,7 @@ expo.mod1 <- mcmodel({
   dose2 <- exporaw_free_chl
   dose.chl <- dose2
   
-      #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
+  #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
   risk1.chl <- (1 - exp(-dose.chl*k))
   risk2 <- mcstoc(rpois, type = "VU", lambda = risk1)
   risk.chl <- risk1.chl
