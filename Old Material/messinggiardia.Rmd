@@ -1,9 +1,13 @@
 ---
-title: "CurrentWorkingDraftCrypto"
+title: "Giardia_riskdraft"
 author: "Anika Larson"
-date: "5/29/2016"
+date: "5/19/2016"
 output: html_document
 ---
+
+To Do:
+Rewrite this for an exponential equation for Giardia, using new Giardia dose-response relationship data.
+
 For this risk estimate, we will use 
 [mcmodel](http://www.inside-r.org/packages/cran/mc2d/docs/mcmodel) and 
 [evalmcmod](http://www.inside-r.org/packages/cran/mc2d/docs/evalmcmod) from 
@@ -14,6 +18,8 @@ the [mc2d](https://cran.r-project.org/web/packages/mc2d/index.html) package.
 # Load packages.
 library(mc2d)
 library(data.table)
+library(sfsmisc)
+library(graphics)
 ```
 
 ### Define variables
@@ -21,16 +27,10 @@ library(data.table)
 Set the number of simulations for the variability and uncertainty dimensions. 
 
 ```{r message=FALSE}
-nsv <- 420
-nsu <- 120
+nsv <- 401
+nsu <- 108
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
-rdv <- (nsu/3)
-cwv <- (nsu/4)
-div.nsv <- (nsv/3)
-div5.nsv <- (nsv/5)
-div5.nsu <- (nsu/5)
-ns <- nsu * nsv
 ```
 
 The _mc2d_ functions will set `nsv` to `ndvar()` and `nsu` to `ndunc()` by 
@@ -48,77 +48,45 @@ digits <- 5
 Introducing the bootstrapped dose-response data, fread command and sampling from Brian:
 
 ```{r}
-alpha <- fread("output_dupont_crypto/alphalist.csv", sep = ',')
-n50 <- fread("output_dupont_crypto/N50list.csv", sep = ',')
-cdr <- merge(alpha,n50, by = "V1")
-scdr <- cdr[sample(nrow(cdr), nsu, replace = TRUE), list(alpha, N50)] #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
+klist <- fread("output_rendtorff_giardia/klist.csv", sep = ',')
+gdrk <- klist[sample(nrow(klist), nsu, replace = TRUE), list(x)] #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
 ```
 
-Leaving that ^ for convenience, but since what we really want is a k-value list made of samples from the three different dose-response estimates (Dupont, Tamu, and UCP):
+Sampling from the Giardia Crabtree custom distribution estimates:
 
 ```{r}
-k_dup <- fread("output_dupont_crypto/klist_dupont.csv", sep = ',')
-gdrkD <- k_dup[sample(nrow(k_dup), div.nsv, replace = TRUE), list(k)] #sampling rows in the dose-response bootstrapped table equal to 1/3 the number of simulations in the uncertainty dimension, aka NSU
-k_tamu <- fread("output_tamu_crypto/klist_tamu.csv", sep = ',')
-gdrkT <- k_tamu[sample(nrow(k_tamu), div.nsv, replace = TRUE), list(k)]
-k_ucp <- fread("output_UCP_crypto/klist_ucp.csv", sep = ',')
-gdrkU <- k_ucp[sample(nrow(k_ucp), div.nsv, replace = TRUE), list(k)]
-kval <- unlist(c(gdrkD,gdrkT,gdrkU))
+cw.vlg <- fread("cwvl_estimates/giardia_estwol.csv", sep = ',')
+cw.vl.samp <- sample(cw.vlg[,c(V1)], nsu, replace = TRUE) 
 ```
 
-
-Sampling from the Cryptosporidium custom distribution estimates:
-
-```{r}
-#Using the original aggregated estimates:
-cw.vlg1 <- fread("conc_data_aggreg.csv", sep = ',')
-cw.vl.samp1 <- sample(cw.vlg1[,c(oocysts)], nsu, replace = TRUE) 
-#Using a combination of log-normal distributions from each of the the 5 different cisterns:
-cw.vl.ln <- fread("concdata_percis.csv", sep = ',')
-v1 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v1_ln)]
-colnames(v1) <- c("cw.vals")
-v11 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v11_ln)]
-colnames(v11) <- c("cw.vals")
-v2 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v2_ln)]
-colnames(v2) <- c("cw.vals")
-v5 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v5_ln)]
-colnames(v5) <- c("cw.vals")
-v8 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(c_v8_ln)]
-colnames(v8) <- c("cw.vals")
-cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v8$cw.vals))
-cw.vl.samp2 <- sample(cw.vlg2, nsu, replace = TRUE) 
-cw.vl.samp <- cw.vl.samp1
-
-```
-
-Sampling from the distribution of the estimates of Crypto reduction by porous ceramic filtration:
 ```{r}
   #pfc_reduc set using the distribution
-  gcfilt <- fread("cer_filts/CerFiltCrypto.csv", sep = ',')
+  gcfilt <- fread("cer_filts/CerFiltGiardia.csv", sep = ',')
   colnames(gcfilt) <- c("trial","logr")
   gcfilt$reduc <- (1 - (10^(-gcfilt$logr)))
   pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
 ```
 
-Sampling from the daily hosing exposure estimates distribution:
 ```{r}
   #Creating a distribution for hosing
   hose <- fread("exp_params/Hosing.csv", sep = ',')
   colnames(hose) <- c("trial","num", "mL")
-  hose$hose_exp1 <- (hose$num * hose$mL)
+  hose$hose_exp1 <- ((hose$num * hose$mL) / 7)
   hose_exp <- hose[sample(nrow(hose), nsu, replace = TRUE), list(hose_exp1)]
 ```
 
-
-Sampling from the daily showering exposure estimates distribution:
 ```{r}
   #Creating a distribution for showering
   shower <- fread("exp_params/Showers.csv", sep = ',')
   colnames(shower) <- c("trial","num", "mL")
-  shower$shower_exp1 <- (shower$num * shower$mL)
+  shower$shower_exp1 <- ((shower$num * shower$mL) / 7)
   shower_exp <- shower[sample(nrow(shower), nsu, replace = TRUE), list(shower_exp1)]
 ```
 
+We will use this variable to explicitly set the seed with the various
+_mc2d_ functions. Another approach would be to only set it through the
+model evaluation functions, or not at all. Since we want to do our best
+to provide the most reproducible results, we set the seed explicitly.
 
 ### Define exposure model
 
@@ -148,12 +116,12 @@ expo.mod1 <- mcmodel({
   
    # Cistern water viral loading (viruses/L):
   cw.vl1 <- mcdata(cw.vl.samp, type = "U")
-  cw.vl2 <- mcstoc(rempiricalD, type = "VU", values = cw.vl.samp)
-  cw.vl <- cw.vl2
-  
+  cw.vl2 <- mcstoc(rempiricalD, type = "V", values = cw.vl.samp)
+  cw.vl <- cw.vl1
+
   # Water consumption (L/day):
   dw.ing1 <- mcdata(1.466, type = "U")
-  dw.ing2 <- mcstoc(rpois, type = "V", lambda = 1.466)
+  dw.ing2 <- mcstoc(rpois, type = "VU", lambda = 1.466)
   dw.ing <- dw.ing1
   
   # Hosing per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
@@ -161,83 +129,63 @@ expo.mod1 <- mcmodel({
   hose.perevent.dis <- mcdata(hose_exp$hose_exp1, type = "U")
   #Daily hosing exposure sampling from distribution
   daily_hose_exp <- mcstoc(rempiricalD, type = "V", values = hose_exp$hose_exp1)
-  hosing <- daily_hose_exp
+  hosing <- hose.perevent
   
    # Showering per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
   shower.perevent <- mcdata(.01, type = "U")
   shower.perevent.dis <- mcdata(shower_exp$shower_exp1, type = "U")
-  
   #Daily showering sampling from distribution:
   daily_shower_exp <- mcstoc(rempiricalD, type = "V", values = shower_exp$shower_exp1)
   shower <- daily_shower_exp
   
-  # Estimate the exposure based on drinking water, hosing and ingestion, assuming no particular distribution:
-  exporaw.mc1 <- (cw.vl * (dw.ing + hosing + shower))
+  # Estimate the exposure based ONLY on drinking water ingestion using the 0, V and U nodes to create a VU node.
+  exporaw.mc1 <- (cw.vl * (dw.ing + hosing + shower)) 
   
-  #Reduction by 2ppm free chlorine:
-    exporaw.2ppm_free_chl1 <- (exporaw.mc1 * .4904)
-    exporaw_2ppm_unc <- mcdata(.4904, type = "U")
-    exporaw_2ppm_free_chl2 <- (exporaw.mc1 * exporaw_2ppm_unc)
-    exporaw.2ppm_free_chl <- exporaw_2ppm_free_chl2
+  #Reduction by free chlorine at 5ppm - this is based on the "range" of values from 99% reduction to 99.8% reduction, but can be changed to just a single value:
+  fc_reduc1 <- mcstoc(rempiricalD, type = "V", seed = seed, values = c(0.01, 0.007, 0.004, 0.002), prob = c(0.25, 0.25, 0.25, 0.25))
   
-  #Reduction by 15ppm free chlorine:
-    exporaw.15ppm_free_chl1 <- (exporaw.mc1 * .47)
-    exporaw_15ppm_unc <- mcdata(.47, type = "U")
-    exporaw_15ppm_free_chl2 <- (exporaw.mc1 * exporaw_15ppm_unc)
-    exporaw.15ppm_free_chl <- exporaw_15ppm_free_chl2
-    
-    #Reduction by one or the other, assuming each is added half the time:
-    exporaw.freechl.tog <- mcstoc(rempiricalD, values = c(.47,.4904), prob = c(.5,.5), type = "V")
-    exporaw_free_chl <- (exporaw.mc1 * exporaw.freechl.tog)
+  #as continuous distribution:
+  fc_reduc <- mcstoc(rempiricalC, type = "VU", n = 401, values = c(.002, .01), min = .002, max = .01) 
+  exporaw.5ppm_fcl <- (exporaw.mc1 * fc_reduc)
   
-  #Reduction by porous ceramic filtration - this is based on the "range" of values from 66.1% reduction to 99.6% reduction:
-  pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
-  pfc_reduc4 <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
-  pfc_reduc <- pfc_reduc4
-  exporaw.porous_ceram <- (exporaw.mc1 * pfc_reduc)
-  
-  #Reduction by porous ceramic filtration, assuming 99% reduction:
-  exporaw.por_ceram_singval <- (exporaw.mc1 * .01)
-      
-  #Reduction by UV filtration:
+  #Reduction by UV: 
   exporaw.uv <- (exporaw.mc1 * .0001)
+  
+    #Reduction by porous ceramic filtration - this is based on the "range" of values from 98.7% reduction to 99.8% reduction, but can be changed to just a single value:
+  pfc_reduc1 <- mcstoc(rempiricalD, type = "V", seed = seed, values = c(0.013, 0.009, 0.006, 0.002), prob = c(0.25, 0.25, 0.25, 0.25))
+  pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
+  pfc_reduc4 <- mcstoc(rempiricalC, type = "V", values = pfc_reduc2$reduc, min=0, max=1)
+  pfc_reduc <- pfc_reduc4
+  exporaw.pfc_reduc <- (exporaw.mc1 * pfc_reduc)
+  
+  #Reduction by porous ceramic filtration AND free chlorine 5ppm:
+  exporaw.fcl_pfc <- (exporaw.mc1 * pfc_reduc * fc_reduc)
+  
+    #Final exposure - just make this whichever one you want to use at the moment:
+  expo.mc1 <- exporaw.pfc_reduc
+  
+  #Estimate the risk using a dose-response model pulling from a bootstrapped model of the dose-response
+  dose <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
 
-  #Final exposure - can be assigned to whichever filtration system is in use:
-  expo.mc1 <-  exporaw.porous_ceram
+  k1 <- mcdata(gdrk$x, type = "U")
+  k2 <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
+  k <- k1
   
-  #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
-  dose1 <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
-  dose2 <- expo.mc1
-  dose <- dose2
-  
-  # Create mcnodes from previously sampled dose-response bootstrap estimates - a and n50 just left here for convenience.
-  a <- mcdata(scdr$alpha, type = "U")
-  n50 <- mcdata(scdr$N50, type = "U")
-  
-  #this equation is my version of what came off QMRA Wiki <http://qmrawiki.canr.msu.edu/index.php?title=Dose_response_assessment> and someone should check it.  BUT it's beta-poisson, and just left here for convenience.
-  riskbp <- 1 - (1 + dose*((2^(1/a)-1)/n50))^(-a) 
-  
-  #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
-  k1 <- mcdata(kval, type = "V")
-  k2 <- mcstoc(rempiricalD, type = "V", values = kval)
-  k <- k2
-  
-  risk1 <- (1 - exp(-dose*k))
-  risk2 <- mcstoc(rpois, type = "VU", lambda = risk1)
-  risk <- risk1
-  
+  risk <- (1 - exp(-dose*k)) #this equation is my version an exponential DR equation from what came off QMRA Wiki <http://qmrawiki.canr.msu.edu/index.php?title=Dose_response_assessment> and someone should check it -A
   
   #yearlyrisk
-  yearrisk <- 1- ((1 - risk)^365)
+  yearrisk <- 1 - ((1 - risk)^365)
+  
+  logyearrisk <- log10(yearrisk)
   
   # Build a mc model from all of the mcnode objects.
-  mc(cw.vl1, cw.vl2, cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw.15ppm_free_chl, exporaw_free_chl, exporaw.uv,  exporaw.porous_ceram, pfc_reduc,  a, n50, k1, k2, k, expo.mc1, dose, riskbp, risk1, risk, yearrisk) 
+  mc(cw.vl, dw.ing, hosing, shower, k, exporaw.mc1, exporaw.5ppm_fcl, fc_reduc, pfc_reduc, exporaw.pfc_reduc, exporaw.uv, expo.mc1, risk, yearrisk, logyearrisk) 
 })
 ```
 
 ### Evaluate the model
 
-Evaluate the model with 401 iterations in the variability dimension and 59 
+Evaluate the model with 5000 iterations in the variability dimension and 250 
 iterations in the uncertainty dimension, as set previously.
 
 ```{r}
@@ -257,13 +205,6 @@ summary(expo.ev1)
 plot(expo.ev1)
 ```
 
-Report the mean and median of the exposure means with a 95% confidence interval (CI95). 
-
-```{r}
-mean.expo <- sapply(1:ndunc(), function(j) mean(expo.ev1$expo.mc1[, j, ]))
-mean(mean.expo)
-quantile(mean.expo, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
-```
 
 Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
 
@@ -278,8 +219,9 @@ Report the mean and median of the YEARLY risk probability means with a 95% confi
 ```{r mean risk}
 mean.yearrisk <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk[, j, ]))
 mean(mean.yearrisk)
-quantile(mean.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+quantile(mean.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "25%", "50%", "75%", "97.5%")]
 ```
+
 
 Plot the empirical cumulative distribution function (ecdf) of the exposure model 
 (`expo.mc1`) estimates.
@@ -297,12 +239,14 @@ Plot the empirical cumulative distribution function (ecdf) of the risk model
 plot(expo.ev1$risk)
 ```
 
-Label the plot:
+So if we did this right, could the plot above can be correctly labeled as follows?
+
+
 
 ```{r plot-riskwlab}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$risk, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
-title("Daily Infec. Risk with Cryptosporidium by RCRW
+title("Daily Infec. Risk with Giardia by RCRW
 in the USVI", cex.main = 1, font.main= 1, line = 7)
 ```
 
@@ -310,9 +254,10 @@ in the USVI", cex.main = 1, font.main= 1, line = 7)
 ```{r plot-yearriskwlab}
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$yearrisk, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
-title("Yearly Infec. Risk with Cryptosporidium by RCRW
+title("Yearly Infec. Risk with Giardia by RCRW
 in the USVI", cex.main = 1, font.main= 1, line = 7)
 ```
+
 
 
 Manually remake the graph, this time using yearrisk, which should just be another mcnode object with all values between 0 and 1:

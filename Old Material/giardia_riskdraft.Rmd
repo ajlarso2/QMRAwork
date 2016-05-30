@@ -67,7 +67,14 @@ cw.vl.samp <- sample(cw.vlg[,c(V1)], nsu, replace = TRUE)
   pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
 ```
 
-  
+```{r}
+  #Creating a distribution for hosing
+  hose <- fread("exp_params/Hosing.csv", sep = ',')
+  colnames(hose) <- c("trial","num", "mL")
+  hose$hose_exp1 <- ((hose$num * hose$mL) / 7)
+  hose_exp <- hose[sample(nrow(hose), nsu, replace = TRUE), list(hose_exp1)]
+```
+
 We will use this variable to explicitly set the seed with the various
 _mc2d_ functions. Another approach would be to only set it through the
 model evaluation functions, or not at all. Since we want to do our best
@@ -100,7 +107,10 @@ expo.mod1 <- mcmodel({
   # (Wiley, 2014), pp. 215-216. Other fictitious values are noted below.
   
    # Cistern water viral loading (viruses/L):
-  cw.vl <- mcdata(cw.vl.samp, type = "U")
+  cw.vl1 <- mcdata(cw.vl.samp, type = "U")
+  
+  cw.vl2 <- mcstoc(rempiricalC, type = "V", values = cw.vl.samp, min=0, max=3.79)
+  cw.vl <- cw.vl2
   
   # Water consumption (L/day):
   dw.ing <- mcdata(1.466, type = "0")
@@ -112,6 +122,9 @@ expo.mod1 <- mcmodel({
   hosing.frequency <- mcstoc(rempiricalD, type = "V", seed = seed, 
                              values = c(0, 0.5, 1), 
                              prob = c(0.1, 0.7, 0.2))
+  
+  #Daily hosing exposure sampling from distribution
+  daily_hose_exp <- hose_exp
   
    # Showering per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
   shower.perevent <- mcdata(.01, type = "0")
@@ -128,8 +141,9 @@ expo.mod1 <- mcmodel({
   
     #Reduction by porous ceramic filtration - this is based on the "range" of values from 98.7% reduction to 99.8% reduction, but can be changed to just a single value:
   pfc_reduc1 <- mcstoc(rempiricalD, type = "V", seed = seed, values = c(0.013, 0.009, 0.006, 0.002), prob = c(0.25, 0.25, 0.25, 0.25))
-
-  pfc_reduc <- mcdata(pfc_reduc2$reduc, type = "U")
+  pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
+  pfc_reduc4 <- mcstoc(rempiricalC, type = "V", values = pfc_reduc2$reduc, min=0, max=1)
+  pfc_reduc <- pfc_reduc4
   exporaw.pfc_reduc <- (exporaw.mc1 * pfc_reduc)
   
   #Reduction by porous ceramic filtration AND free chlorine 5ppm:

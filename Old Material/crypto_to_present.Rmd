@@ -27,6 +27,7 @@ ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
 rdv <- (nsu/3)
 cwv <- (nsu/4)
+ns <- nsu * nsv
 ```
 
 The _mc2d_ functions will set `nsv` to `ndvar()` and `nsu` to `ndunc()` by 
@@ -79,6 +80,21 @@ cw.vl.samp <- sample(cw.vlg[,c(V1)], nsu, replace = TRUE) #sampling rows in the 
   pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
 ```
 
+```{r}
+  #Creating a distribution for hosing
+  hose <- fread("exp_params/Hosing.csv", sep = ',')
+  colnames(hose) <- c("trial","num", "mL")
+  hose$hose_exp1 <- ((hose$num * hose$mL) / 7)
+  hose_exp <- hose[sample(nrow(hose), nsu, replace = TRUE), list(hose_exp1)]
+```
+
+```{r}
+  #Creating a distribution for showering
+  shower <- fread("exp_params/Showers.csv", sep = ',')
+  colnames(shower) <- c("trial","num", "mL")
+  shower$shower_exp1 <- ((shower$num * shower$mL) / 7)
+  shower_exp <- shower[sample(nrow(shower), nsu, replace = TRUE), list(shower_exp1)]
+```
 ### Define exposure model
 
 Within the [mcmodel](http://www.inside-r.org/packages/cran/mc2d/docs/mcmodel)
@@ -106,82 +122,99 @@ expo.mod1 <- mcmodel({
   # (Wiley, 2014), pp. 215-216. Other fictitious values are noted below.
   
    # Cistern water viral loading (viruses/L):
-  cw.vl <- mcdata(cw.vl.samp, type = "U")
+  cw.vl1 <- mcdata(cw.vl.samp, type = "U")
+  cw.vl2 <- mcstoc(rempiricalD, type = "V", values = cw.vl.samp)
+  cw.vl <- cw.vl2
   
   # Water consumption (L/day):
-  dw.ing <- mcdata(1.466, type = "0")
-
+  dw.ing1 <- mcdata(1.466, type = "U")
+  dw.ing2 <- mcstoc(rpois, type = "V", lambda = 1.466)
+  dw.ing <- dw.ing1
+  
   # Hosing per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
-  hose.perevent <- mcdata(.01, type = "0")
-
-  # Hosing frequency (hosing/day), fictitious discrete distribution that is NOT IN USE and is only still around as an example of the discrete empirical distribution syntax:
-  hosing.frequency <- mcstoc(rempiricalD, type = "V", seed = seed, 
-                             values = c(0, 0.5, 1), 
-                             prob = c(0.1, 0.7, 0.2))
+  hose.perevent <- mcdata(.01, type = "U")
+  hose.perevent.dis <- mcdata(hose_exp$hose_exp1, type = "U")
+  #Daily hosing exposure sampling from distribution
+  daily_hose_exp <- mcstoc(rempiricalD, type = "V", values = hose_exp$hose_exp1)
+  hosing <- daily_hose_exp
   
    # Showering per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
-  shower.perevent <- mcdata(.01, type = "0")
+  shower.perevent <- mcdata(.01, type = "U")
+  shower.perevent.dis <- mcdata(shower_exp$shower_exp1, type = "U")
   
-  # Estimate the exposure based ONLY on drinking water ingestion using the 0, V and U nodes to create a VU node.
-  exporaw.mc1 <- (cw.vl * (dw.ing + hose.perevent + shower.perevent)) 
+  #Daily showering sampling from distribution:
+  daily_shower_exp <- mcstoc(rempiricalD, type = "V", values = shower_exp$shower_exp1)
+  shower <- daily_shower_exp
+  
+  # Estimate the exposure based on drinking water, hosing and ingestion, assuming no particular distribution:
+  exporaw.mc1 <- (cw.vl * (dw.ing + hosing + shower))
   
   #Reduction by 2ppm free chlorine:
-  exporaw.2ppm_free_chl <- (exporaw.mc1 * .4904)
+    exporaw.2ppm_free_chl1 <- (exporaw.mc1 * .4904)
+    exporaw_2ppm_unc <- mcdata(.4904, type = "U")
+    exporaw_2ppm_free_chl2 <- (exporaw.mc1 * exporaw_2ppm_unc)
+    exporaw.2ppm_free_chl <- exporaw_2ppm_free_chl2
   
   #Reduction by 15ppm free chlorine:
-  exporaw.15ppm_free_chl <- (exporaw.mc1 * .47)
+    exporaw.15ppm_free_chl1 <- (exporaw.mc1 * .47)
+    exporaw_15ppm_unc <- mcdata(.47, type = "U")
+    exporaw_15ppm_free_chl2 <- (exporaw.mc1 * exporaw_15ppm_unc)
+    exporaw.15ppm_free_chl <- exporaw_15ppm_free_chl2
+    
+    #Reduction by one or the other, assuming each is added half the time:
+    exporaw.freechl.tog <- mcstoc(rempiricalD, values = c(.47,.4904), prob = c(.5,.5), type = "V")
+    exporaw_free_chl <- (exporaw.mc1 * exporaw.freechl.tog)
   
-  #Reduction by UV filtration:
-  exporaw.uv <- (exporaw.mc1 * .0001)
-  
- #Reduction by UV filtration and 2ppmchlorine:
-  exporaw.uv_and_2ppm_chl <- (exporaw.mc1 * .0001 * .4904)
-  
-  #Reduction by porous ceramic filtration - this is based on the "range" of values from 66.1% reduction to 99.6% reduction, but can be changed to just 99% reduction as well (that's the next version, see below):
-  pfc_reduc1 <- mcstoc(rempiricalD, type = "V", seed = seed, values = c(0.004, 0.135, 0.266, 0.39), prob = c(0.25, 0.25, 0.25, 0.25))
-  
-  pfc_reduc <- mcdata(pfc_reduc2$reduc, type = "U")
+  #Reduction by porous ceramic filtration - this is based on the "range" of values from 66.1% reduction to 99.6% reduction:
+  pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
+  pfc_reduc4 <- mcstoc(rempiricalC, type = "V", values = pfc_reduc2$reduc, min=0, max=1)
+  pfc_reduc <- pfc_reduc4
   exporaw.porous_ceram <- (exporaw.mc1 * pfc_reduc)
   
   #Reduction by porous ceramic filtration, assuming 99% reduction:
   exporaw.por_ceram_singval <- (exporaw.mc1 * .01)
-  
-   #Reduction by UV filtration, ceramic filtration (single value), and 2ppmchlorine:
-  exporaw.uv_2ppm_chl_cerfilt <- (exporaw.mc1 * .0001 * .4904 * .01)
-  
-   #Reduction by ceramic filter (single value) and 2ppmchlorine:
-  exporaw.2ppm_chl_cerfilt <- (exporaw.mc1 * .4904 * .01)
-  
+      
+  #Reduction by UV filtration:
+  exporaw.uv <- (exporaw.mc1 * .0001)
+
   #Final exposure - just make this whichever one you want to use at the moment:
-  expo.mc1 <- exporaw.porous_ceram
+  expo.mc1 <-  exporaw.por_ceram_singval
+
   
   #Estimate the risk using a dose-response model pulling from a bootstrapped model of the dose-response
-  dose <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
+  dose1 <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
+  dose2 <- expo.mc1
+  dose <- dose2
   
   # Create mcnodes from previously sampled dose-response bootstrap estimates. - Brian
   
   a <- mcdata(scdr$alpha, type = "U")
   n50 <- mcdata(scdr$N50, type = "U")
   
-  #this equation is my version of what came off QMRA Wiki <http://qmrawiki.canr.msu.edu/index.php?title=Dose_response_assessment> and someone should check it.  But it's beta-poisson, and just left here for convenience.
+  #this equation is my version of what came off QMRA Wiki <http://qmrawiki.canr.msu.edu/index.php?title=Dose_response_assessment> and someone should check it.  BUT it's beta-poisson, and just left here for convenience.
   riskbp <- 1 - (1 + dose*((2^(1/a)-1)/n50))^(-a) 
   
   #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
-  k <- mcdata(kval, type = "U")
+  k1 <- mcdata(kval, type = "U")
+  k2 <- mcstoc(rempiricalD, type = "VU", values = kval)
+  k <- k2
   
-  risk <- (1 - exp(-dose*k)) 
+  risk1 <- (1 - exp(-dose*k))
+  risk2 <- mcstoc(rpois, type = "VU", lambda = risk1)
+  risk <- risk1
+  
   
   #yearlyrisk
   yearrisk <- 1- ((1 - risk)^365)
   
   # Build a mc model from all of the mcnode objects.
-  mc(cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw.2ppm_free_chl, exporaw.15ppm_free_chl, exporaw.uv, exporaw.uv_and_2ppm_chl, exporaw.uv_2ppm_chl_cerfilt, exporaw.2ppm_chl_cerfilt, exporaw.porous_ceram, pfc_reduc,  a, n50, expo.mc1, riskbp, risk, yearrisk) 
+  mc(cw.vl1, cw.vl2, cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw.15ppm_free_chl, exporaw_free_chl, exporaw.uv,  exporaw.porous_ceram, pfc_reduc,  a, n50, k1, k2, k, expo.mc1, dose, riskbp, risk1, risk, yearrisk) 
 })
 ```
 
 ### Evaluate the model
 
-Evaluate the model with 5000 iterations in the variability dimension and 250 
+Evaluate the model with 401 iterations in the variability dimension and 59 
 iterations in the uncertainty dimension, as set previously.
 
 ```{r}
@@ -260,7 +293,6 @@ title("Yearly Infec. Risk with Cryptosporidium by RCRW
 in the USVI", cex.main = 1, font.main= 1, line = 7)
 ```
 
-Elena/Mary - this stuff is just me trying to figure out what's going wrong with with the logarithmic graphmaking.
 
 Manually remake the graph, this time using yearrisk, which should just be another mcnode object with all values between 0 and 1:
 
