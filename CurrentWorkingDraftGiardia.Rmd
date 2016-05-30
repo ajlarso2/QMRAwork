@@ -160,7 +160,7 @@ expo.mod1 <- mcmodel({
   
     #Reduction by porous ceramic filtration:
   pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
-  pfc_reduc4 <- mcstoc(rempiricalC, type = "V", values = pfc_reduc2$reduc, min=0, max=1)
+  pfc_reduc4 <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
   pfc_reduc <- pfc_reduc4
   exporaw.pfc_reduc <- (exporaw.mc1 * pfc_reduc)
   

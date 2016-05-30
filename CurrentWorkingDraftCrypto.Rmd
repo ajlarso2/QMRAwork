@@ -129,7 +129,7 @@ expo.mod1 <- mcmodel({
   
    # Cistern water viral loading (viruses/L):
   cw.vl1 <- mcdata(cw.vl.samp, type = "U")
-  cw.vl2 <- mcstoc(rempiricalD, type = "V", values = cw.vl.samp)
+  cw.vl2 <- mcstoc(rempiricalD, type = "VU", values = cw.vl.samp)
   cw.vl <- cw.vl2
   
   # Water consumption (L/day):
@@ -173,7 +173,7 @@ expo.mod1 <- mcmodel({
   
   #Reduction by porous ceramic filtration - this is based on the "range" of values from 66.1% reduction to 99.6% reduction:
   pfc_reduc3 <- mcdata(pfc_reduc2$reduc, type = "U")
-  pfc_reduc4 <- mcstoc(rempiricalC, type = "V", values = pfc_reduc2$reduc, min=0, max=1)
+  pfc_reduc4 <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
   pfc_reduc <- pfc_reduc4
   exporaw.porous_ceram <- (exporaw.mc1 * pfc_reduc)
   
@@ -185,7 +185,6 @@ expo.mod1 <- mcmodel({
 
   #Final exposure - can be assigned to whichever filtration system is in use:
   expo.mc1 <-  exporaw.por_ceram_singval
-
   
   #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
   dose1 <- mcstoc(rpois, type = "VU", lambda = expo.mc1)
@@ -202,7 +201,7 @@ expo.mod1 <- mcmodel({
   
   #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
   k1 <- mcdata(kval, type = "V")
-  k2 <- mcstoc(rempiricalD, type = "VU", values = kval)
+  k2 <- mcstoc(rempiricalD, type = "V", values = kval)
   k <- k2
   
   risk1 <- (1 - exp(-dose*k))
