@@ -99,7 +99,7 @@ Sampling from the distribution of the estimates of Crypto reduction by porous ce
   #pfc_reduc set using the distribution
   gcfilt <- fread("cer_filts/CerFiltCrypto.csv", sep = ',')
   colnames(gcfilt) <- c("trial","logr")
-  gcfilt$reduc <- (1 - (10^(-gcfilt$logr)))
+  gcfilt$reduc <- 10^(-gcfilt$logr)
   pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
 ```
 
