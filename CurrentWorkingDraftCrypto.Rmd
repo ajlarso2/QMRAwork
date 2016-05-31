@@ -176,21 +176,9 @@ expo.mod1 <- mcmodel({
   
   # Estimate the exposure based on drinking water, hosing and ingestion, assuming no particular distribution:
   exporaw.mc1 <- (cw.vl * (dw.ing + hosing + shower))
-  
-  #Reduction by 2ppm free chlorine:
-    exporaw.2ppm_free_chl1 <- (exporaw.mc1 * .4904)
-    exporaw_2ppm_unc <- mcdata(.4904, type = "U")
-    exporaw_2ppm_free_chl2 <- (exporaw.mc1 * exporaw_2ppm_unc)
-    exporaw.2ppm_free_chl <- exporaw_2ppm_free_chl2
-  
-  #Reduction by 15ppm free chlorine:
-    exporaw.15ppm_free_chl1 <- (exporaw.mc1 * .47)
-    exporaw_15ppm_unc <- mcdata(.47, type = "U")
-    exporaw_15ppm_free_chl2 <- (exporaw.mc1 * exporaw_15ppm_unc)
-    exporaw.15ppm_free_chl <- exporaw_15ppm_free_chl2
     
-    #Reduction by one or the other, assuming each is added half the time:
-    exporaw.freechl.tog <- mcstoc(rempiricalD, values = c(.47,.4904), prob = c(.5,.5), type = "V")
+    #Reduction by one of the estimates for free chlorine reduction given in Table 3, assuming each is equally likely:
+    exporaw.freechl.tog <- mcstoc(rempiricalD, values = c(.47,.4904,.01), prob = c(.33,.33,.33), type = "V")
     exporaw_free_chl <- (exporaw.mc1 * exporaw.freechl.tog)
   
   #Reduction by porous ceramic filtration based on the distribution entered lines 101-107:
@@ -232,7 +220,7 @@ expo.mod1 <- mcmodel({
   yearrisk <- 1- ((1 - risk)^365)
   
   # Build a mc model from all of the mcnode objects.
-  mc(cw.vl1, cw.vl2, cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw.15ppm_free_chl, exporaw_free_chl, exporaw.uv,  exporaw.porous_ceram, pfc_reduc,  a, n50, k1, k2, k, expo.mc1, dose, riskbp, risk1, risk, yearrisk) 
+  mc(cw.vl1, cw.vl2, cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw_free_chl, exporaw.uv,  exporaw.porous_ceram, pfc_reduc,  a, n50, k1, k2, k, expo.mc1, dose, riskbp, risk1, risk, yearrisk) 
 })
 ```
 
