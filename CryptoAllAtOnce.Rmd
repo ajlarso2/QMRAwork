@@ -43,7 +43,7 @@ Define the variables we will use to set the `seed` for random sampling and the
 number of `digits` for `print()` statements.
 
 ```{r}
-seed <- 2
+seed <- 1
 digits <- 5
 ```
 
