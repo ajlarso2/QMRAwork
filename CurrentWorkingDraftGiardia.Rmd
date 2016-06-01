@@ -241,20 +241,20 @@ plot(expo.ev1)
 ```
 
 
-Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean median-risk}
-mean.risk <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk[, j, ]))
-mean(mean.risk)
-quantile(mean.risk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median median-risk}
+median.risk <- sapply(1:ndunc(), function(j) median(expo.ev1$risk[, j, ]))
+median(median.risk)
+quantile(median.risk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean risk}
-mean.yearrisk <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk[, j, ]))
-mean(mean.yearrisk)
-quantile(mean.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "25%", "50%", "75%", "97.5%")]
+```{r median risk}
+median.yearrisk <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk[, j, ]))
+median(median.yearrisk)
+quantile(median.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "25%", "50%", "75%", "97.5%")]
 ```
 
 

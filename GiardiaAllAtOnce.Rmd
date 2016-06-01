@@ -295,28 +295,28 @@ summary(expo.ev1)
 plot(expo.ev1)
 ```
 
-Report the mean and median of the exposure means with a 95% confidence interval (CI95). 
+Report the median and median of the exposure medians with a 95% confidence interval (CI95). 
 
 ```{r}
-mean.expo <- sapply(1:ndunc(), function(j) mean(expo.ev1$expo.mc1[, j, ]))
-mean(mean.expo)
-quantile(mean.expo, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+median.expo <- sapply(1:ndunc(), function(j) median(expo.ev1$expo.mc1[, j, ]))
+median(median.expo)
+quantile(median.expo, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean median-risk}
-mean.risk <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk[, j, ]))
-mean(mean.risk)
-quantile(mean.risk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median median-risk}
+median.risk <- sapply(1:ndunc(), function(j) median(expo.ev1$risk[, j, ]))
+median(median.risk)
+quantile(median.risk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean risk}
-mean.yearrisk <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk[, j, ]))
-mean(mean.yearrisk)
-quantile(mean.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median risk}
+median.yearrisk <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk[, j, ]))
+median(median.yearrisk)
+quantile(median.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
 Plot the empirical cumulative distribution function (ecdf) of the exposure model 
@@ -355,20 +355,20 @@ in the USVI", cex.main = 1, font.main= 1, line = 7)
 
 RAW:
 
-Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean median-risk.raw}
-mean.risk.raw <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk.raw[, j, ]))
-mean(mean.risk.raw)
-quantile(mean.risk.raw, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median median-risk.raw}
+median.risk.raw <- sapply(1:ndunc(), function(j) median(expo.ev1$risk.raw[, j, ]))
+median(median.risk.raw)
+quantile(median.risk.raw, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean risk.raw}
-mean.yearrisk.raw <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk.raw[, j, ]))
-mean(mean.yearrisk.raw)
-quantile(mean.yearrisk.raw, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median risk.raw}
+median.yearrisk.raw <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk.raw[, j, ]))
+median(median.yearrisk.raw)
+quantile(median.yearrisk.raw, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
 Plot the empirical cumulative distribution function (ecdf) of the risk model 
@@ -398,20 +398,20 @@ from Raw Water", cex.main = 1, font.main= 1, line = 7)
 
 CHLORINATED:
 
-Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean median-risk.chl}
-mean.risk.chl <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk.chl[, j, ]))
-mean(mean.risk.chl)
-quantile(mean.risk.chl, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median median-risk.chl}
+median.risk.chl <- sapply(1:ndunc(), function(j) median(expo.ev1$risk.chl[, j, ]))
+median(median.risk.chl)
+quantile(median.risk.chl, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean risk.chl}
-mean.yearrisk.chl <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk.chl[, j, ]))
-mean(mean.yearrisk.chl)
-quantile(mean.yearrisk.chl, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median risk.chl}
+median.yearrisk.chl <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk.chl[, j, ]))
+median(median.yearrisk.chl)
+quantile(median.yearrisk.chl, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
 Plot the empirical cumulative distribution function (ecdf) of the risk model 
@@ -441,20 +441,20 @@ from Chlorinated Water", cex.main = 1, font.main= 1, line = 7)
 
 UV TREATED:
 
-Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean median-risk.uv}
-mean.risk.uv <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk.uv[, j, ]))
-mean(mean.risk.uv)
-quantile(mean.risk.uv, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median median-risk.uv}
+median.risk.uv <- sapply(1:ndunc(), function(j) median(expo.ev1$risk.uv[, j, ]))
+median(median.risk.uv)
+quantile(median.risk.uv, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean risk.uv}
-mean.yearrisk.uv <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk.uv[, j, ]))
-mean(mean.yearrisk.uv)
-quantile(mean.yearrisk.uv, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median risk.uv}
+median.yearrisk.uv <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk.uv[, j, ]))
+median(median.yearrisk.uv)
+quantile(median.yearrisk.uv, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
 Plot the empirical cumulative distribution function (ecdf) of the risk model 
@@ -484,20 +484,20 @@ from UV Treated Water", cex.main = 1, font.main= 1, line = 7)
 
 POROUS CERAMIC FILTRATION:
 
-Report the mean and median of the DAILY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean median-risk.pcf}
-mean.risk.pcf <- sapply(1:ndunc(), function(j) mean(expo.ev1$risk.pcf[, j, ]))
-mean(mean.risk.pcf)
-quantile(mean.risk.pcf, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median median-risk.pcf}
+median.risk.pcf <- sapply(1:ndunc(), function(j) median(expo.ev1$risk.pcf[, j, ]))
+median(median.risk.pcf)
+quantile(median.risk.pcf, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the mean and median of the YEARLY risk probability means with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
 
-```{r mean risk.pcf}
-mean.yearrisk.pcf <- sapply(1:ndunc(), function(j) mean(expo.ev1$yearrisk.pcf[, j, ]))
-mean(mean.yearrisk.pcf)
-quantile(mean.yearrisk.pcf, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
+```{r median risk.pcf}
+median.yearrisk.pcf <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk.pcf[, j, ]))
+median(median.yearrisk.pcf)
+quantile(median.yearrisk.pcf, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
 Plot the empirical cumulative distribution function (ecdf) of the risk model 
