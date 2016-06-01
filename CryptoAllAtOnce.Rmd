@@ -61,9 +61,9 @@ Leaving that ^ for convenience, but since what we really want is a k-value list 
 ```{r}
 k_dup <- fread("output_dupont_crypto/klist_dupont.csv", sep = ',')
 gdrkD <- k_dup[sample(nrow(k_dup), div.nsv, replace = TRUE), list(k)] #sampling rows in the dose-response bootstrapped table equal to 1/3 the number of simulations in the uncertainty dimension, aka NSU
-k_tamu <- fread("output_tamu_crypto/klist_tamu.csv", sep = ',')
+k_tamu <- fread("output_tamu_crypto/klist.csv", sep = ',')
 gdrkT <- k_tamu[sample(nrow(k_tamu), div.nsv, replace = TRUE), list(k)]
-k_ucp <- fread("output_UCP_crypto/klist_ucp.csv", sep = ',')
+k_ucp <- fread("output_UCP_crypto/klist.csv", sep = ',')
 gdrkU <- k_ucp[sample(nrow(k_ucp), div.nsv, replace = TRUE), list(k)]
 kval <- unlist(c(gdrkD,gdrkT,gdrkU))
 ```
