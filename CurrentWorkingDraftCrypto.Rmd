@@ -178,7 +178,7 @@ expo.mod1 <- mcmodel({
   exporaw.mc1 <- (cw.vl * (dw.ing + hosing + shower))
     
     #Reduction by one of the estimates for free chlorine reduction given in Table 3, assuming each is equally likely:
-    exporaw.freechl.tog <- mcstoc(rempiricalD, values = c(.47,.4904,.01), prob = c(.33,.33,.33), type = "V")
+    exporaw.freechl.tog <- mcstoc(rempiricalD, values = c(.53,.5096,.01), prob = c(.33,.33,.33), type = "V")
     exporaw_free_chl <- (exporaw.mc1 * exporaw.freechl.tog)
   
   #Reduction by porous ceramic filtration based on the distribution entered lines 101-107:
