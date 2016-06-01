@@ -24,7 +24,7 @@ Set the number of simulations for the variability and uncertainty dimensions.
 
 ```{r message=FALSE}
 nsv <- 360
-nsu <- 120
+nsu <- 420
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
 rdv <- (nsu/3)
@@ -32,6 +32,7 @@ cwv <- (nsu/4)
 div.nsv <- (nsv/3)
 div5.nsv <- (nsv/5)
 div5.nsu <- (nsu/5)
+div7.nsu <- (nsu/7)
 ns <- nsu * nsv
 ```
 
@@ -59,21 +60,25 @@ Sampling from the Giardia Crabtree custom distribution estimates:
 ```{r}
 #Using the original custom distribution of estimates from aggregated cistern estimates:
 cw.vlg1 <- fread("conc_data_aggreg.csv", sep = ',')
-cw.vl.samp1 <- sample(cw.vlg1[,c(cysts)], nsu, replace = TRUE) 
+cw.vl.samp.1 <- sample(cw.vlg1[,c(cysts)], nsu, replace = TRUE) 
 
 #Using a combination of log-normal distributions from each of the the 5 different cisterns:
 cw.vl.ln <- fread("concdata_percis.csv", sep = ',')
-v1 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v1_ln)]
+v1 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(g_v1_ln)]
 colnames(v1) <- c("cw.vals")
-v11 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v11_ln)]
+v11 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(g_v11_ln)]
 colnames(v11) <- c("cw.vals")
-v2 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v2_ln)]
+v2 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(g_v2_ln)]
 colnames(v2) <- c("cw.vals")
-v5 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v5_ln)]
+v5 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(g_v5_ln)]
 colnames(v5) <- c("cw.vals")
-v9 <- cw.vl.ln[sample(nrow(cw.vl.ln), div5.nsu, replace = TRUE), list(g_v9_ln)]
+v9 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(g_v9a_ln)]
 colnames(v9) <- c("cw.vals")
-cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v9$cw.vals))
+v10 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(g_v10_ln)]
+colnames(v5) <- c("cw.vals")
+v8 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(g_v8a_ln)]
+colnames(v9) <- c("cw.vals")
+cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v9$cw.vals,v10$cw.vals,v8$cw.vals))
 cw.vl.samp2 <- sample(cw.vlg2, nsu, replace = TRUE) 
 
 #Determine which estimate to use: the original custom distribution (cw.vl.samp1) or the combined lognormal ditributions for each cistern (cw.vl.samp2).
