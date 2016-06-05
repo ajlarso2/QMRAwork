@@ -78,19 +78,19 @@ cw.vl.samp1 <- sample(cw.vlg1[,c(oocysts)], nsu, replace = TRUE)
 
 #Using a combination of log-normal distributions from each of the the 5 different cisterns:
 cw.vl.ln <- fread("concdata_percis.csv", sep = ',')
-v1 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v1_ln)]
+v1 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v1_tmed)]
 colnames(v1) <- c("cw.vals")
-v11 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v11_ln)]
+v11 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v11_tmed)]
 colnames(v11) <- c("cw.vals")
-v2 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v2_ln)]
+v2 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v2_tmed)]
 colnames(v2) <- c("cw.vals")
-v5 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v5_ln)]
+v5 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v5_tmed)]
 colnames(v5) <- c("cw.vals")
-v8 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v8a_ln)]
+v8 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v8a_tmed)]
 colnames(v8) <- c("cw.vals")
-v9 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v9a_ln)]
+v9 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v9a_tmed)]
 colnames(v9) <- c("cw.vals")
-v10 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v10_ln)]
+v10 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(c_v10_tmed)]
 colnames(v10) <- c("cw.vals")
 cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v8$cw.vals,v9$cw.vals,v10$cw.vals))
 cw.vl.samp2 <- sample(cw.vlg2, nsu, replace = TRUE) 
@@ -156,7 +156,7 @@ expo.mod1 <- mcmodel({
   # 2nd Edition by Charles N. Haas, Joan B. Rose, and Charles P. Gerba. 
   # (Wiley, 2014), pp. 215-216. Other fictitious values are noted below.
   
-   # Cistern water viral loading (viruses/L):
+  #Cistern water viral loading (viruses/L):
   cw.vl1 <- mcdata(cw.vl.samp, type = "U")
   cw.vl2 <- mcstoc(rempiricalD, type = "VU", values = cw.vl.samp)
   cw.vl <- cw.vl2

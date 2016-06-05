@@ -23,8 +23,7 @@ Set the number of simulations for the variability and uncertainty dimensions.
 ```{r message=FALSE}
 nsv <- 360
 nsu <- 420
-ndvar(nsv)  # Variability
-ndunc(nsu)   # Uncertainty
+ # Uncertainty
 rdv <- (nsu/3)
 cwv <- (nsu/4)
 div.nsv <- (nsv/3)
@@ -64,7 +63,9 @@ k_tamu <- fread("output_tamu_crypto/klist.csv", sep = ',')
 gdrkT <- k_tamu[sample(nrow(k_tamu), div.nsv, replace = TRUE), list(k)]
 k_ucp <- fread("output_UCP_crypto/klist.csv", sep = ',')
 gdrkU <- k_ucp[sample(nrow(k_ucp), div.nsv, replace = TRUE), list(k)]
-kval <- unlist(c(gdrkD,gdrkT,gdrkU))
+kvalues <- rbind(k_dup,k_tamu,k_ucp)
+what <- kvalues[sample(nrow(kvalues), nsv, replace = TRUE), list(k)]
+kval <- as.numeric(what$k)
 ```
 
 
@@ -235,7 +236,7 @@ Evaluate the model with 401 iterations in the variability dimension and 59
 iterations in the uncertainty dimension, as set previously.
 
 ```{r}
-expo.ev1 <- evalmcmod(expo.mod1, seed = seed)
+expo.ev1 <- evalmcmod(expo.mod1, seed = seed, nsv = nsv, nsu = nsu)
 print(expo.ev1, digits = digits)
 ```
 
