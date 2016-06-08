@@ -54,6 +54,7 @@ Introducing the bootstrapped dose-response data, fread command and sampling:
 ```{r}
 klist <- fread("output_rendtorff_giardia/klist.csv", sep = ',')
 gdrk <- klist[sample(nrow(klist), nsu, replace = TRUE), list(x)] #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
+num.kvals <- as.numeric(klist$x) #just creating a list from ALL the values that can be sampled from.
 ```
 
 Sampling from the Giardia Crabtree custom distribution estimates:
@@ -81,6 +82,8 @@ v8 <- cw.vl.ln[sample(nrow(cw.vl.ln), div7.nsu, replace = TRUE), list(g_v8a_ln)]
 colnames(v9) <- c("cw.vals")
 cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v9$cw.vals,v10$cw.vals,v8$cw.vals))
 cw.vl.samp2 <- sample(cw.vlg2, nsu, replace = TRUE) 
+
+
 
 #Determine which estimate to use: the original custom distribution (cw.vl.samp1) or the combined lognormal ditributions for each cistern (cw.vl.samp2).
 cw.vl.samp <- cw.vl.samp2
@@ -110,6 +113,7 @@ Sampling from the daily hosing exposure estimates distribution:
   colnames(hose) <- c("trial","num", "mL")
   hose$hose_exp1 <- (hose$num * hose$mL)
   hose_exp <- hose[sample(nrow(hose), nsu, replace = TRUE), list(hose_exp1)]
+  num.hose <- as.numeric(hose$hose_exp1)
 ```
 
 Sampling from the daily showering exposure estimates distribution:
@@ -153,7 +157,6 @@ expo.mod1 <- mcmodel({
   # (Wiley, 2014), pp. 215-216. Other fictitious values are noted below.
   
   #Setting options for cistern water viral loading (viruses/L):
-  cw.vl1 <- mcdata(cw.vl.samp, type = "U")
   cw.vl2 <- mcstoc(rempiricalD, type = "V", values = cw.vl.samp)
   cw.vl3 <- mcstoc(rempiricalD, type = "VU", values = cw.vl.samp)
   #Defining cistern water viral loading:
@@ -168,12 +171,10 @@ expo.mod1 <- mcmodel({
   hose.perevent <- mcdata(.01, type = "U")
   hose.perevent.dis <- mcdata(hose_exp$hose_exp1, type = "U")
   #Daily hosing exposure sampling from distribution
-  daily_hose_exp <- mcstoc(rempiricalD, type = "V", values = hose_exp$hose_exp1)
-  hosing <- hose.perevent
+  daily_hose_exp <- mcstoc(rempiricalD, type = "V", values = num.hose)
+  hosing <- daily_hose_exp
   
    # Showering per event ingestion rate (L/event): worst case estimate = 10mL or .01L per day
-  shower.perevent <- mcdata(.01, type = "U")
-  shower.perevent.dis <- mcdata(shower_exp$shower_exp1, type = "U")
   #Daily showering sampling from distribution:
   daily_shower_exp <- mcstoc(rempiricalD, type = "V", values = shower_exp$shower_exp1)
   shower <- daily_shower_exp
@@ -201,8 +202,8 @@ expo.mod1 <- mcmodel({
   
   #Drawing from the bootstrapped distribution of k-values made in Crystal Ball:
   k1 <- mcdata(gdrk$x, type = "U")
-  k2 <- mcstoc(rempiricalD, type = "VU", values = pfc_reduc2$reduc)
-  k <- k1
+  k2 <- mcstoc(rempiricalD, type = "V", values = num.kvals)
+  k <- k2
   
   #estimating risk with exponential equation:
   risk1 <- (1 - exp(-dose*k))
@@ -269,7 +270,7 @@ expo.mod1 <- mcmodel({
   yearrisk.pcf <- 1- ((1 - risk.pcf)^365)
   
   # Build a mc model from all of the mcnode objects.
-  mc(cw.vl1, cw.vl2, cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw.5ppm_fcl, exporaw.uv,  pfc_reduc, exporaw.pfc_reduc, k1, k2, k, expo.mc1, dose, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
+  mc(cw.vl2, cw.vl, dw.ing, hose.perevent, shower, exporaw.5ppm_fcl, exporaw.uv,  pfc_reduc, exporaw.pfc_reduc, k1, k2, k, expo.mc1, dose, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
 })
 ```
 

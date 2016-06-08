@@ -22,8 +22,8 @@ library(data.table)
 Set the number of simulations for the variability and uncertainty dimensions. 
 
 ```{r message=FALSE}
-nsv <- 360
-nsu <- 420
+nsv <- 100
+nsu <- 100
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
 rdv <- (nsu/3)
@@ -65,7 +65,10 @@ k_tamu <- fread("output_tamu_crypto/klist.csv", sep = ',')
 gdrkT <- k_tamu[sample(nrow(k_tamu), div.nsv, replace = TRUE), list(k)]
 k_ucp <- fread("output_UCP_crypto/klist.csv", sep = ',')
 gdrkU <- k_ucp[sample(nrow(k_ucp), div.nsv, replace = TRUE), list(k)]
-kval <- unlist(c(gdrkD,gdrkT,gdrkU))
+kvalues <- rbind(k_dup,k_tamu,k_ucp)
+num.kvals <- as.numeric(kvalues$k)
+what <- kvalues[sample(nrow(kvalues), nsv, replace = TRUE), list(k)]
+kval <- as.numeric(what$k)
 ```
 
 
@@ -95,8 +98,12 @@ colnames(v10) <- c("cw.vals")
 cw.vlg2 <- unlist(c(v1$cw.vals,v11$cw.vals,v2$cw.vals,v5$cw.vals,v8$cw.vals,v9$cw.vals,v10$cw.vals))
 cw.vl.samp2 <- sample(cw.vlg2, nsu, replace = TRUE) 
 
+#Combine the estimates prior to sampling
+cw.vl.ln <- fread("concdata_percis.csv", sep = ',')
+cw.vlg3 <- unlist(c(cw.vl.ln$c_v1_tmed, cw.vl.ln$c_v2_tmed, cw.vl.ln$c_v5_tmed, cw.vl.ln$c_v8a_tmed, cw.vl.ln$c_v9a_tmed, cw.vl.ln$c_v10_tmed))
+
 #Determine which estimate to use: the original custom distribution (cw.vl.samp1) or the combined lognormal ditributions for each cistern (cw.vl.samp2).
-cw.vl.samp <- cw.vl.samp2
+cw.vl.samp <- cw.vlg3
 
 ```
 ```
@@ -157,7 +164,6 @@ expo.mod1 <- mcmodel({
   # (Wiley, 2014), pp. 215-216. Other fictitious values are noted below.
   
   #Cistern water viral loading (viruses/L):
-  cw.vl1 <- mcdata(cw.vl.samp, type = "U")
   cw.vl2 <- mcstoc(rempiricalD, type = "VU", values = cw.vl.samp)
   cw.vl <- cw.vl2
   
@@ -209,7 +215,7 @@ expo.mod1 <- mcmodel({
   a <- mcdata(scdr$alpha, type = "U")
   n50 <- mcdata(scdr$N50, type = "U")
   k1 <- mcdata(kval, type = "V")
-  k2 <- mcstoc(rempiricalD, type = "V", values = kval)
+  k2 <- mcstoc(rempiricalD, type = "V", values = num.kvals)
   k <- k2
   
   #estimating risk with exponential equation:
@@ -280,7 +286,7 @@ expo.mod1 <- mcmodel({
   yearrisk.pcf <- 1- ((1 - risk.pcf)^365)
   
   # Build a mc model from all of the mcnode objects.
-  mc(cw.vl1, cw.vl2, cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw_free_chl, exporaw.uv,  exporaw.porous_ceram, pfc_reduc,  a, n50, k1, k2, k, expo.mc1, dose, riskbp, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
+  mc(cw.vl2, cw.vl, dw.ing, hose.perevent, shower.perevent, exporaw_free_chl, exporaw.uv,  exporaw.porous_ceram, pfc_reduc,  a, n50, k1, k2, k, expo.mc1, dose, riskbp, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
 })
 ```
 
