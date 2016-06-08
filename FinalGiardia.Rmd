@@ -52,7 +52,6 @@ Introducing the bootstrapped dose-response data, fread command and sampling:
 
 ```{r}
 klist <- fread("output_rendtorff_giardia/klist.csv", sep = ',')
-gdrk <- klist[sample(nrow(klist), nsu, replace = TRUE), list(x)] #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
 num.kvals <- as.numeric(klist$x) #just creating a list from ALL the values that can be sampled from.
 ```
 
@@ -168,9 +167,8 @@ expo.mod1 <- mcmodel({
   dose <- dose2
   
   #Drawing from the bootstrapped distribution of k-values made in Crystal Ball:
-  k1 <- mcdata(gdrk$x, type = "U")
-  k2 <- mcstoc(rempiricalD, type = "V", values = num.kvals)
-  k <- k2
+  k1 <- mcstoc(rempiricalD, type = "V", values = num.kvals)
+  k <- k1
   
   #estimating risk with exponential equation:
   risk1 <- (1 - exp(-dose*k))
@@ -226,7 +224,7 @@ expo.mod1 <- mcmodel({
   yearrisk.pcf <- 1- ((1 - risk.pcf)^365)
   
   # Build a mc model from all of the mcnode objects.
-  mc(cw.vl2, cw.vl, dw.ing, hosing, shower, exporaw.5ppm_fcl, exporaw.uv,  pfc_reduc, exporaw.pfc_reduc, k1, k2, k, expo.mc1, dose, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
+  mc(cw.vl2, cw.vl, dw.ing, hosing, shower, exporaw.5ppm_fcl, exporaw.uv,  pfc_reduc, exporaw.pfc_reduc, k1, k, expo.mc1, dose, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
 })
 ```
 
