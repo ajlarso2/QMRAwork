@@ -91,7 +91,7 @@ Sampling from the distribution of the estimates of Giardia reduction by porous c
   gcfilt <- fread("cer_filts/CerFiltGiardia.csv", sep = ',')
   colnames(gcfilt) <- c("trial","logr")
   gcfilt$reduc <- 10^(-gcfilt$logr)
-  pfc_reduc2 <- gcfilt[sample(nrow(gcfilt), nsu, replace = TRUE), list(reduc)]
+  pfc_reduc2 <- as.numeric(gcfilt$reduc)
 ```
 
 We will use this variable to explicitly set the seed with the various
@@ -156,7 +156,7 @@ expo.mod1 <- mcmodel({
   exporaw.uv <- (exporaw.mc1 * .0001)
   
   #Reduction by porous ceramic filtration based on the distribution entered earlier:
-  pfc_reduc <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2$reduc)
+  pfc_reduc <- mcstoc(rempiricalD, type = "V", values = pfc_reduc2)
   exporaw.pfc_reduc <- (exporaw.mc1 * pfc_reduc)
   
   #Final exposure - can be assigned to whichever filtration system is in use:
@@ -199,7 +199,7 @@ expo.mod1 <- mcmodel({
   #yearlyrisk
   yearrisk.chl <- 1- ((1 - risk.chl)^365)
   
-    #UV VERSION:
+  #UV VERSION:
   dose.uv <- exporaw.uv
   
   #Exponential version of the equation:
@@ -209,13 +209,11 @@ expo.mod1 <- mcmodel({
   #yearlyrisk
   yearrisk.uv <- 1- ((1 - risk.uv)^365)
   
-      #POROUS CERAMIC FILTRATION VERSION:
-  #Either directly consider the exposure the dose, or add uncertainty by considering it a Poisson distribution centered at the previous estimate (? - this showed up in an earlier version) :
-  dose1.pcf <- mcstoc(rpois, type = "VU", lambda = exporaw.pfc_reduc)
+    #POROUS CERAMIC FILTRATION VERSION:
   dose2.pcf <- exporaw.pfc_reduc
   dose.pcf <- dose2.pcf
   
-      #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
+    #Exponential version of the equation:
   risk1.pcf <- (1 - exp(-dose.pcf*k))
   risk2.pcf <- mcstoc(rpois, type = "VU", lambda = risk1.pcf)
   risk.pcf <- risk1.pcf
@@ -281,32 +279,6 @@ Plot the empirical cumulative distribution function (ecdf) of the exposure model
 # Generate an "ecdf" plot. This actually calls plot.mcnode().
 plot(expo.ev1$expo.mc1)
 ```
-
-Plot the empirical cumulative distribution function (ecdf) of the risk model 
-(`risk`) estimates.
-
-```{r plot-risk}
-# Generate an "ecdf" plot. This actually calls plot.mcnode().
-plot(expo.ev1$risk)
-```
-
-Label the plot:
-
-```{r plot-riskwlab}
-# Generate an "ecdf" plot. This actually calls plot.mcnode().
-plot(expo.ev1$risk, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
-title("Daily Infec. Risk with Giardia by RCRW
-in the USVI", cex.main = 1, font.main= 1, line = 7)
-```
-
-
-```{r plot-yearriskwlab}
-# Generate an "ecdf" plot. This actually calls plot.mcnode().
-plot(expo.ev1$yearrisk, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
-title("Yearly Infec. Risk with Giardia by RCRW
-in the USVI", cex.main = 1, font.main= 1, line = 7)
-```
-
 
 RAW:
 

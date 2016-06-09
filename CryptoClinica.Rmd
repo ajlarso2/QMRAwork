@@ -1,5 +1,5 @@
 ---
-title: "FinalCrypto"
+title: "CryptoClinical"
 author: "Anika Larson"
 date: "6/8/2016"
 output: pdf_document
@@ -57,9 +57,9 @@ scdr <- cdr[sample(nrow(cdr), nsu, replace = TRUE), list(alpha, N50)] #sampling 
 Leaving that ^ for convenience, but since what we really want is a k-value list made of samples from the three different dose-response estimates (Dupont, Tamu, and UCP):
 
 ```{r}
-k_dup <- fread("output_dupont_crypto/klist_dupont.csv", sep = ',')
-k_tamu <- fread("output_tamu_crypto/klist.csv", sep = ',')
-k_ucp <- fread("output_UCP_crypto/klist.csv", sep = ',')
+k_dup <- fread("output_crypto_dupont_clinical/klist.csv", sep = ',')
+k_tamu <- fread("output_crypto_tamu_clinical/klist.csv", sep = ',')
+k_ucp <- fread("output_UCP_crypto_clinical/klist.csv", sep = ',')
 kvalues <- rbind(k_dup,k_tamu,k_ucp)
 num.kvals <- as.numeric(kvalues$k)
 ```
@@ -266,55 +266,6 @@ Report the median and median of the exposure medians with a 95% confidence inter
 median.expo <- sapply(1:ndunc(), function(j) median(expo.ev1$expo.mc1[, j, ]))
 median(median.expo)
 quantile(median.expo, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
-```
-
-Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
-
-```{r median median-risk}
-median.risk <- sapply(1:ndunc(), function(j) median(expo.ev1$risk[, j, ]))
-median(median.risk)
-quantile(median.risk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
-```
-
-Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
-
-```{r median risk}
-median.yearrisk <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk[, j, ]))
-median(median.yearrisk)
-quantile(median.yearrisk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
-```
-
-Plot the empirical cumulative distribution function (ecdf) of the exposure model 
-(`expo.mc1`) estimates.
-
-```{r plot-mc1}
-# Generate an "ecdf" plot. This actually calls plot.mcnode().
-plot(expo.ev1$expo.mc1)
-```
-
-Plot the empirical cumulative distribution function (ecdf) of the risk model 
-(`risk`) estimates.
-
-```{r plot-risk}
-# Generate an "ecdf" plot. This actually calls plot.mcnode().
-plot(expo.ev1$risk)
-```
-
-Label the plot:
-
-```{r plot-riskwlab}
-# Generate an "ecdf" plot. This actually calls plot.mcnode().
-plot(expo.ev1$risk, main = "", ylab = "Proportion of Estimates", xlab = "Daily Probability of Infection")
-title("Daily Infec. Risk with Cryptosporidium by RCRW
-in the USVI", cex.main = 1, font.main= 1, line = 7)
-```
-
-
-```{r plot-yearriskwlab}
-# Generate an "ecdf" plot. This actually calls plot.mcnode().
-plot(expo.ev1$yearrisk, main = "", ylab = "Proportion of Estimates", xlab = "Yearly Probability of Infection")
-title("Yearly Infec. Risk with Cryptosporidium by RCRW
-in the USVI", cex.main = 1, font.main= 1, line = 7)
 ```
 
 

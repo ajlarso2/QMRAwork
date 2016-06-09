@@ -1,0 +1,3 @@
+"","MODEL","MINIMIZED DEVIANCE","CHI-SQUARED CRITICAL","CHI-SQRD P-value","CONCLUSION"
+" ","Exponential","11.4679","7.8147","0.0094","Exponential model does NOT show a good fit to the data"
+" ","Beta Poisson","4.4785","5.9915","0.1065","beta Poisson model shows a good fit to the data"
