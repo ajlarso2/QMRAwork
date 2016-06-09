@@ -20,17 +20,10 @@ library(data.table)
 Set the number of simulations for the variability and uncertainty dimensions. 
 
 ```{r}
-nsv <- 100
-nsu <- 100
+nsv <- 401
+nsu <- 59
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
-rdv <- (nsu/3)
-cwv <- (nsu/4)
-div.nsv <- (nsv/3)
-div5.nsv <- (nsv/5)
-div5.nsu <- (nsu/5)
-div7.nsu <- (nsu/7)
-ns <- nsu * nsv
 ```
 
 The _mc2d_ functions will set `nsv` to `ndvar()` and `nsu` to `ndunc()` by 
@@ -45,23 +38,14 @@ seed <- 1
 digits <- 5
 ```
 
-Introducing the bootstrapped dose-response data, fread command and sampling from Brian:
-
-```{r}
-alpha <- fread("output_dupont_crypto/alphalist.csv", sep = ',')
-n50 <- fread("output_dupont_crypto/N50list.csv", sep = ',')
-cdr <- merge(alpha,n50, by = "V1")
-scdr <- cdr[sample(nrow(cdr), nsu, replace = TRUE), list(alpha, N50)] #sampling rows in the dose-response bootstrapped table equal to the number of simulations in the uncertainty dimension, aka NSU
-```
-
-Leaving that ^ for convenience, but since what we really want is a k-value list made of samples from the three different dose-response estimates (Dupont, Tamu, and UCP):
+K-value list made of samples from the three different dose-response estimates (Dupont, Tamu, and UCP):
 
 ```{r}
 k_dup <- fread("output_crypto_dupont_clinical/klist.csv", sep = ',')
 k_tamu <- fread("output_crypto_tamu_clinical/klist.csv", sep = ',')
 k_ucp <- fread("output_UCP_crypto_clinical/klist.csv", sep = ',')
 kvalues <- rbind(k_dup,k_tamu,k_ucp)
-num.kvals <- as.numeric(kvalues$k)
+num.kvals <- as.numeric(kvalues$x)
 ```
 
 Sampling from the Cryptosporidium custom distribution estimates:
@@ -167,9 +151,7 @@ expo.mod1 <- mcmodel({
   dose2 <- expo.mc1
   dose <- dose2
   
-  # Create mcnodes from previously sampled dose-response bootstrap estimates - a and n50 just left here for convenience.
-  a <- mcdata(scdr$alpha, type = "U")
-  n50 <- mcdata(scdr$N50, type = "U")
+  # Create mcnodes from previously sampled dose-response bootstrap estimates:
   k1 <- mcstoc(rempiricalD, type = "V", values = num.kvals)
   k <- k1
   
@@ -186,9 +168,7 @@ expo.mod1 <- mcmodel({
   dose1.raw <- mcstoc(rpois, type = "VU", lambda = exporaw.mc1)
   dose2.raw <- exporaw.mc1
   dose.raw <- dose2.raw
-  
-  #this equation is my version of what came off QMRA Wiki <http://qmrawiki.canr.msu.edu/index.php?title=Dose_response_assessment> and someone should check it.  BUT it's beta-poisson, and just left here for convenience.
-  riskbp <- 1 - (1 + dose*((2^(1/a)-1)/n50))^(-a) 
+
   
       #Exponential version of the equation (also from QMRA Wiki and please lmk if it looks wrong):
   risk1.raw <- (1 - exp(-dose.raw*k))
@@ -234,7 +214,7 @@ expo.mod1 <- mcmodel({
   yearrisk.pcf <- 1- ((1 - risk.pcf)^365)
   
   # Build a mc model from all of the mcnode objects.
-  mc(cw.vl2, cw.vl, dw.ing, daily_hose_exp, daily_shower_exp, exporaw_free_chl, exporaw.uv,  exporaw.porous_ceram, pfc_reduc,  a, n50, k1, k, expo.mc1, dose, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
+  mc(cw.vl2, cw.vl, dw.ing, daily_hose_exp, daily_shower_exp, exporaw_free_chl, exporaw.uv,  exporaw.porous_ceram, pfc_reduc,  k1, k, expo.mc1, dose, risk1, risk, yearrisk, risk.raw, dose.raw, yearrisk.raw,risk.chl, dose.chl, yearrisk.chl,risk.uv, dose.uv, yearrisk.uv,risk.pcf, dose.pcf, yearrisk.pcf) 
 })
 ```
 

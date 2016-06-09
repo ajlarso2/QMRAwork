@@ -23,17 +23,10 @@ library(graphics)
 Set the number of simulations for the variability and uncertainty dimensions. 
 
 ```{r}
-nsv <- 360
-nsu <- 420
+nsv <- 401
+nsu <- 59
 ndvar(nsv)  # Variability
 ndunc(nsu)   # Uncertainty
-rdv <- (nsu/3)
-cwv <- (nsu/4)
-div.nsv <- (nsv/3)
-div5.nsv <- (nsv/5)
-div5.nsu <- (nsu/5)
-div7.nsu <- (nsu/7)
-ns <- nsu * nsv
 ```
 
 The _mc2d_ functions will set `nsv` to `ndvar()` and `nsu` to `ndunc()` by 
