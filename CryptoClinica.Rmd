@@ -43,8 +43,7 @@ K-value list made of samples from the three different dose-response estimates (D
 ```{r}
 k_dup <- fread("output_crypto_dupont_clinical/klist.csv", sep = ',')
 k_tamu <- fread("output_crypto_tamu_clinical/klist.csv", sep = ',')
-k_ucp <- fread("output_UCP_crypto_clinical/klist.csv", sep = ',')
-kvalues <- rbind(k_dup,k_tamu,k_ucp)
+kvalues <- rbind(k_dup,k_tamu)
 num.kvals <- as.numeric(kvalues$x)
 ```
 
