@@ -1,6 +1,6 @@
 ---
-title: "FinalGiardia"
-author: "Anika Larson"
+title: "2D Monte Carlo Simulation of Risk of Giardia Infection from Roof-Collected Rainwater in the USVI Using mc2d"
+author: "Anika Larson, Mary Chan, Elena Jaffer"
 date: "6/8/2016"
 output: pdf_document
 ---
@@ -241,7 +241,7 @@ summary(expo.ev1)
 plot(expo.ev1)
 ```
 
-Report the median and median of the exposure medians with a 95% confidence interval (CI95). 
+Report the median and median of the exposure medians with a 95% tolerance limit (CI95). 
 
 ```{r}
 median.expo <- sapply(1:ndunc(), function(j) median(expo.ev1$expo.mc1[, j, ]))
@@ -249,7 +249,7 @@ median(median.expo)
 quantile(median.expo, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median median-risk}
 median.risk <- sapply(1:ndunc(), function(j) median(expo.ev1$risk[, j, ]))
@@ -257,7 +257,7 @@ median(median.risk)
 quantile(median.risk, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median risk}
 median.yearrisk <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk[, j, ]))
@@ -275,7 +275,7 @@ plot(expo.ev1$expo.mc1)
 
 RAW:
 
-Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median median-risk.raw}
 median.risk.raw <- sapply(1:ndunc(), function(j) median(expo.ev1$risk.raw[, j, ]))
@@ -283,7 +283,7 @@ median(median.risk.raw)
 quantile(median.risk.raw, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median risk.raw}
 median.yearrisk.raw <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk.raw[, j, ]))
@@ -318,7 +318,7 @@ from Raw Water", cex.main = 1, font.main= 1, line = 7)
 
 CHLORINATED:
 
-Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median median-risk.chl}
 median.risk.chl <- sapply(1:ndunc(), function(j) median(expo.ev1$risk.chl[, j, ]))
@@ -326,7 +326,7 @@ median(median.risk.chl)
 quantile(median.risk.chl, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median risk.chl}
 median.yearrisk.chl <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk.chl[, j, ]))
@@ -361,7 +361,7 @@ from Chlorinated Water", cex.main = 1, font.main= 1, line = 7)
 
 UV TREATED:
 
-Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median median-risk.uv}
 median.risk.uv <- sapply(1:ndunc(), function(j) median(expo.ev1$risk.uv[, j, ]))
@@ -369,7 +369,7 @@ median(median.risk.uv)
 quantile(median.risk.uv, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median risk.uv}
 median.yearrisk.uv <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk.uv[, j, ]))
@@ -404,7 +404,7 @@ from UV Treated Water", cex.main = 1, font.main= 1, line = 7)
 
 POROUS CERAMIC FILTRATION:
 
-Report the median and median of the DAILY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the DAILY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median median-risk.pcf}
 median.risk.pcf <- sapply(1:ndunc(), function(j) median(expo.ev1$risk.pcf[, j, ]))
@@ -412,7 +412,7 @@ median(median.risk.pcf)
 quantile(median.risk.pcf, probs = seq(0, 1, 0.025))[c("2.5%", "50%", "97.5%")]
 ```
 
-Report the median and median of the YEARLY risk probability medians with a 95% confidence interval (CI95). 
+Report the median and median of the YEARLY risk probability medians with a 95% tolerance limit (CI95). 
 
 ```{r median risk.pcf}
 median.yearrisk.pcf <- sapply(1:ndunc(), function(j) median(expo.ev1$yearrisk.pcf[, j, ]))
@@ -447,9 +447,9 @@ from Water Treated with PCF", cex.main = 1, font.main= 1, line = 7)
 
 
 
-Manually remake the graph, this time using yearrisk, which should just be another mcnode object with all values between 0 and 1:
+Manually remake the graph, this time using yearrisk:
 
-The first one plots yearrisk without a log x scale:
+The first one plots yearly risk without a log x scale:
 ```{r plot-withyearrisk}
 library(reshape)
 library(ggplot2)
@@ -472,7 +472,7 @@ grays <- c('gray75', 'gray35', 'black', 'gray35', 'gray75')
 ggplot(quant.melt1, aes(x = x)) + theme_bw() + theme(legend.position = 'none') + geom_hline(yintercept = c(0, 1), linetype = "dashed", color = 'gray') + stat_ecdf(aes(group = q, color = q)) + xlab('x') + ylab('Fn(x)') + scale_colour_manual(values = grays)
 ```
 
-Plot Version 2 with ggplot2, and a log-scale x axis:
+Plot Version 2 for yearly risk from raw water with ggplot2, and a log-scale x axis:
 
 ```{r plot-withyearrisklogscale}
 quant.melt1 <- suppressMessages(melt(quant1))
